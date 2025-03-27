@@ -1,0 +1,78 @@
+/* Admin Dashboard container */
+.admin-dashboard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: #000; /* Dark background */
+    color: #fff; /* White text for contrast */
+    text-align: center;
+    padding: 20px;
+}
+
+/* Dashboard heading */
+.admin-dashboard h2 {
+    font-size: 36px; /* Increased font size */
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 40px;
+}
+
+/* Card container */
+.card-container {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+/* Individual dashboard cards */
+.dashboard-card {
+    background: #222;
+    padding: 30px;
+    width: 400px; /* Increased width */
+    height: 180px; /* Increased height */
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(255, 255, 255, 0.15);
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Hover effect */
+.dashboard-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 15px rgba(255, 255, 255, 0.2);
+}
+
+/* Card heading */
+.dashboard-card h3 {
+    font-size: 24px; /* Increased text size */
+    font-weight: bold;
+    margin-bottom: 12px;
+    color: #17a2b8; /* Cyan blue */
+}
+
+/* Card description */
+.dashboard-card p {
+    font-size: 18px; /* Increased text size */
+    color: #ddd;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .card-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .dashboard-card {
+        width: 100%;
+        height: auto;
+    }
+}

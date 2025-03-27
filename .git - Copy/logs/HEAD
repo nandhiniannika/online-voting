@@ -1,0 +1,5 @@
+0000000000000000000000000000000000000000 4b9da5678932afb748260d2282a07ec39a883d37 Annikalla Nandhini <150242225+nandhiniannika@users.noreply.github.com> 1740558566 +0530	clone: from https://github.com/Neerupamakolla/online-voting.git
+4b9da5678932afb748260d2282a07ec39a883d37 6c2564c98782b1e096285cb40d4fd974a58a3236 Annikalla Nandhini <150242225+nandhiniannika@users.noreply.github.com> 1740565062 +0530	commit: second-commit
+6c2564c98782b1e096285cb40d4fd974a58a3236 383d7c478c0ba797492abfd567c04fc2cd33de0e Annikalla Nandhini <150242225+nandhiniannika@users.noreply.github.com> 1740565645 +0530	rebase (start): checkout origin/main
+383d7c478c0ba797492abfd567c04fc2cd33de0e 383d7c478c0ba797492abfd567c04fc2cd33de0e Annikalla Nandhini <150242225+nandhiniannika@users.noreply.github.com> 1740565645 +0530	rebase (finish): returning to refs/heads/main
+383d7c478c0ba797492abfd567c04fc2cd33de0e 20dd91a8cf2fb07fb8c3c134a43bb0a9064a99de Annikalla Nandhini <150242225+nandhiniannika@users.noreply.github.com> 1743001991 +0530	commit: second-commit
