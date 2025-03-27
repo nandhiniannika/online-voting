@@ -5,11 +5,7 @@ const morgan = require("morgan");
 const dotenv = require("dotenv");
 const path = require("path");
 
-<<<<<<< HEAD
 dotenv.config(); // Load environment variables from .env
-=======
-dotenv.config(); // Load environment variables
->>>>>>> bbeab6f7e5f101cc4447ed6aeb0e7660550c8916
 
 // Import Routes
 const authRoutes = require("./routes/auth");
@@ -50,11 +46,7 @@ mongoose
         process.exit(1);
     });
 
-<<<<<<< HEAD
 // ✅ API Routes
-=======
-// ✅ API Routes (Ensure `/api/` prefix is used properly)
->>>>>>> bbeab6f7e5f101cc4447ed6aeb0e7660550c8916
 app.use("/api/auth", authRoutes);  // Login route exists here
 app.use("/api/users", adminRoutes);
 app.use("/api/candidates", candidateRoutes);
@@ -62,11 +54,7 @@ app.use("/api/votes", voteRoutes);
 app.use("/api/voter", voterRoutes);
 app.use("/api/google-sheets", updateSheetsRoute);
 
-<<<<<<< HEAD
 // ✅ Test API Route
-=======
-// ✅ Test API Route (Check if backend is running)
->>>>>>> bbeab6f7e5f101cc4447ed6aeb0e7660550c8916
 app.get("/", (req, res) => {
     res.send("✅ Backend is running!");
 });
