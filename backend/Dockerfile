@@ -10,8 +10,9 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json ./
 
-# Ensure proper installation of dependencies
-RUN npm ci  # Use `npm ci` instead of `npm install` for a clean install
+# Install dependencies (with caching for better performance)
+RUN npm ci
+
 
 # Copy the rest of the application
 COPY . .
