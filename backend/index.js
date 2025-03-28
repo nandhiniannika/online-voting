@@ -18,29 +18,35 @@ const voterRoutes = require("./routes/voter");
 const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/voter_management_2";
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000"; // Update this with your Vercel frontend URL
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000"; // Update with your Vercel frontend URL
 
 // ✅ Middleware
 
-// ✅ CORS Fix (Dynamic Origin Handling)
+// ✅ CORS Fix (Handles Preflight Requests)
 const allowedOrigins = [
-    "http://localhost:3000",
-    "https://online-voting-2-5ediog9ug-annikalla-nandhinis-projects.vercel.app"
-  ];
-  
-  app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    if (allowedOrigins.includes(origin)) {
-      res.setHeader("Access-Control-Allow-Origin", origin);
-      res.setHeader("Access-Control-Allow-Credentials", "true");
-      res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-      res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    }
-    next();
-  });
-  
+  "http://localhost:3000",
+  "https://online-voting-2-5ediog9ug-annikalla-nandhinis-projects.vercel.app"
+];
 
-app.use(express.json()); // Built-in JSON parser
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  }
+
+  // Handle Preflight Requests
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  next();
+});
+
+// ✅ JSON Middleware (Moved Before Routes)
+app.use(express.json());
 app.use(morgan("dev")); // Logging
 
 // ✅ Serve Static Files (Fix `/uploads` issue)
@@ -66,7 +72,7 @@ mongoose
   });
 
 // ✅ API Routes
-app.use("/api/auth", authRoutes); // Login route
+app.use("/api/auth", authRoutes);
 app.use("/api/users", adminRoutes);
 app.use("/api/candidates", candidateRoutes);
 app.use("/api/votes", voteRoutes);
