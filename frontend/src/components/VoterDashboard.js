@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "./VoterDashboard.css";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API_URL = process.env.REACT_APP_API_URL || "https://online-voting-1-hn3o.onrender.com"; // Ensure it uses deployed backend
+
 
 const VoterDashboard = () => {
   const [candidates, setCandidates] = useState([]);

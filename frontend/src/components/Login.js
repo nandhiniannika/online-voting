@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import "./Login.css";
 import axios from "axios";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000"; // Dynamic API URL
+
+const API_URL = process.env.REACT_APP_API_URL || "https://online-voting-1-hn3o.onrender.com"; 
 
 const Login = () => {
     const [id, setId] = useState("");

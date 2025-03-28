@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './UserManagement.css';
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
+const API_URL = process.env.REACT_APP_API_URL || "https://online-voting-1-hn3o.onrender.com"; 
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
