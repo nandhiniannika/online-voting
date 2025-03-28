@@ -40,37 +40,45 @@ router.get("/", async (req, res) => {
 });
 
 // Add Voter (Admin Functionality)
-// Add Voter (Admin Functionality)
-router.post("/addvoter", async (req, res) => {
+router.post("/addvoter", upload.single("image"), async (req, res) => {
     try {
-        const { voter_id, image_path } = req.body;
+        const { voter_id } = req.body;
 
-        if (!voter_id || !image_path) {
-            return res.status(400).json({ success: false, message: "Missing voter ID or image path" });
+        if (!voter_id || voter_id.length !== 12) {
+            return res.status(400).json({ success: false, message: "Voter ID must be exactly 12 characters long" });
         }
 
-        // ✅ Corrected script path inside backend/FaceRecognition/
-        const scriptPath = "/opt/render/project/src/backend/FaceRecognition/add_faces.py";
+        const image_filename = req.file?.filename;
+        if (!image_filename) {
+            return res.status(400).json({ success: false, message: "Image file is required" });
+        }
 
-        console.log(`📸 Processing face for voter ID: ${voter_id}, Image Path: ${image_path}`);
+        const newUser = new User({ voter_id, image_filename });
+        await newUser.save();
 
-        // ✅ Execute the Python script
-        exec(`python3 ${scriptPath} ${voter_id} ${image_path}`, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`❌ Execution Error: ${error.message}`);
+        // Run `add_faces.py` for Face Processing
+        const imagePath = path.join(uploadDir, image_filename);
+        const addFacesScript = path.join(__dirname, "../FaceRecognition/add_faces.py");
+
+        if (!fs.existsSync(addFacesScript)) {
+            return res.status(500).json({ success: false, message: "Face processing script missing." });
+        }
+
+        console.log(`Executing Python script: ${addFacesScript} with Voter ID: ${voter_id}`);
+
+        exec(`"${pythonPath}" "${addFacesScript}" "${voter_id}" "${imagePath}"`, (error, stdout, stderr) => {
+            console.log(`Python Output: ${stdout.trim()}`);
+
+            if (error || stderr) {
                 return res.status(500).json({ success: false, message: "Face processing failed" });
             }
-            if (stderr) {
-                console.error(`⚠️ Python Script Error: ${stderr}`);
-            }
-            console.log(`✅ Python Output: ${stdout}`);
 
-            return res.status(200).json({ success: true, message: "Face processing successful" });
+            res.status(201).json({ success: true, message: "Voter added successfully", user: newUser });
         });
 
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false, message: "Internal Server Error" });
+    } catch (error) {
+        console.error("Error:", error.message);
+        res.status(400).json({ success: false, message: error.message });
     }
 });
 

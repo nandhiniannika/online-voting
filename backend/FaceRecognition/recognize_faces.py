@@ -1,60 +1,100 @@
 import face_recognition
+import numpy as np
 import pickle
 import sys
 import os
 import cv2
+import time
 
-# ✅ Load known face encodings
-OUTPUT_DIR = "C:/Users/nandh/OneDrive/Desktop/Online_Voting/online-voting/backend/FaceRecognition/data"
-faces_data_path = os.path.join(OUTPUT_DIR, "faces_data.pkl")
-names_data_path = os.path.join(OUTPUT_DIR, "names.pkl")
+# ✅ Define paths
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  
+DATA_DIR = os.path.join(BASE_DIR, "data")  
 
-if os.path.exists(faces_data_path) and os.path.exists(names_data_path):
-    with open(faces_data_path, "rb") as f:
-        known_encodings = pickle.load(f)
-    with open(names_data_path, "rb") as f:
-        known_names = pickle.load(f)
+faces_data_path = os.path.join(DATA_DIR, "faces_data.pkl")
+names_path = os.path.join(DATA_DIR, "names.pkl")
+
+# ✅ Check if face data exists
+if not os.path.exists(faces_data_path) or not os.path.exists(names_path):
+    print("❌ ERROR: Face data files not found! Run `add_faces.py` first.")
+    sys.exit(1)
+
+# ✅ Load known encodings & names
+with open(faces_data_path, "rb") as f:
+    known_encodings = pickle.load(f)
+
+with open(names_path, "rb") as f:
+    known_names = pickle.load(f)
+
+# ✅ Ensure voter_id is provided
+if len(sys.argv) < 2:
+    print("❌ ERROR: Missing voter ID! Usage: python recognize_faces.py <voter_id>")
+    sys.exit(1)
+
+voter_id = sys.argv[1]
+
+# ✅ Open camera
+print("📸 Opening camera for face recognition...")
+cap = cv2.VideoCapture(0)  
+
+if not cap.isOpened():
+    print("❌ ERROR: Could not open camera!")
+    sys.exit(1)
+
+# ✅ Reduce resolution for faster processing
+cap.set(3, 640)  # Width
+cap.set(4, 480)  # Height
+
+recognized_voter_id = None
+start_time = time.time()
+RECOGNITION_TIME = 5  # Camera stays open for exactly 5 seconds
+THRESHOLD = 0.5  
+
+detected_ids = []  # Store recognized voter IDs
+
+while time.time() - start_time < RECOGNITION_TIME:
+    ret, frame = cap.read()
+    if not ret:
+        print("❌ ERROR: Camera issue! Try again.")
+        break
+
+    frame = cv2.flip(frame, 1)  # Avoid mirror effect
+
+    # ✅ Convert to RGB (for face_recognition)
+    small_frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)  # Downscale for speed
+    rgb_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
+
+    # ✅ Detect and encode faces
+    face_locations = face_recognition.face_locations(rgb_frame)
+    face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+
+    # ✅ Draw rectangles on detected faces
+    for (top, right, bottom, left) in face_locations:
+        top, right, bottom, left = top*2, right*2, bottom*2, left*2  # Scale back
+        cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+
+    cv2.imshow("Face Recognition - Align your face", frame)  # Show camera feed
+
+    # ✅ Process recognition
+    for captured_encoding in face_encodings:
+        face_distances = face_recognition.face_distance(known_encodings, captured_encoding)
+        best_match_index = np.argmin(face_distances)
+
+        match_distance = face_distances[best_match_index]
+        matched_id = known_names[best_match_index]
+
+        if match_distance < THRESHOLD:
+            detected_ids.append(matched_id)  # Store recognized IDs
+
+    cv2.waitKey(1)  # Allow OpenCV to process GUI events
+
+# ✅ Cleanup
+cap.release()
+cv2.destroyAllWindows()
+
+# ✅ Final authentication check
+if voter_id in detected_ids:
+    print(f"✅ MATCH: {voter_id}")
+    sys.exit(0)  # Success
 else:
-    print("❌ ERROR: No stored face data found!")
-    sys.exit(1)
-
-# ✅ Check for input arguments
-if len(sys.argv) < 3:
-    print("❌ ERROR: No Voter ID or Image Path provided!")
-    sys.exit(1)
-
-voter_id = sys.argv[1]  # Get voter ID
-image_path = sys.argv[2]  # Get image path
-
-if not os.path.exists(image_path):
-    print(f"❌ ERROR: Image file '{image_path}' not found!")
-    sys.exit(1)
-
-print(f"📷 Processing image for voter: {voter_id}")
-
-# ✅ Load the uploaded image
-test_image = cv2.imread(image_path)
-rgb_test_image = cv2.cvtColor(test_image, cv2.COLOR_BGR2RGB)
-
-# ✅ Detect faces in the image
-face_locations = face_recognition.face_locations(rgb_test_image, model="hog")
-if len(face_locations) == 0:
-    print("❌ No face detected! Try again.")
-    sys.exit(1)
-
-# ✅ Get face encodings for the uploaded image
-test_encodings = face_recognition.face_encodings(rgb_test_image, face_locations)
-
-# ✅ Compare with known encodings
-for test_encoding in test_encodings:
-    matches = face_recognition.compare_faces(known_encodings, test_encoding)
-    if True in matches:
-        matched_index = matches.index(True)
-        matched_voter_id = known_names[matched_index]
-        
-        if matched_voter_id == voter_id:
-            print(f"✅ MATCH: {voter_id}")
-            sys.exit(0)
-
-print("❌ Face mismatch! Access denied.")
-sys.exit(1)
+    print("❌ Authentication failed! Face not recognized within 5 seconds.")
+    sys.exit(1)  # Failure
