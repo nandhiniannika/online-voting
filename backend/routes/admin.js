@@ -40,47 +40,29 @@ router.get("/", async (req, res) => {
 });
 
 // Add Voter (Admin Functionality)
+// Add Voter (Admin Functionality)
 router.post("/addvoter", upload.single("image"), async (req, res) => {
-    try {
-        const { voter_id } = req.body;
+    const voter_id = req.body.voter_id;
+    const imagePath = req.file?.path; // Ensure file path is correct
 
-        if (!voter_id || voter_id.length !== 12) {
-            return res.status(400).json({ success: false, message: "Voter ID must be exactly 12 characters long" });
-        }
-
-        const image_filename = req.file?.filename;
-        if (!image_filename) {
-            return res.status(400).json({ success: false, message: "Image file is required" });
-        }
-
-        const newUser = new User({ voter_id, image_filename });
-        await newUser.save();
-
-        // Run `add_faces.py` for Face Processing
-        const imagePath = path.join(uploadDir, image_filename);
-        const addFacesScript = path.join(__dirname, "../FaceRecognition/add_faces.py");
-
-        if (!fs.existsSync(addFacesScript)) {
-            return res.status(500).json({ success: false, message: "Face processing script missing." });
-        }
-
-        console.log(`Executing Python script: ${addFacesScript} with Voter ID: ${voter_id}`);
-
-        exec(`"${pythonPath}" "${addFacesScript}" "${voter_id}" "${imagePath}"`, (error, stdout, stderr) => {
-            console.log(`Python Output: ${stdout.trim()}`);
-
-            if (error || stderr) {
-                return res.status(500).json({ success: false, message: "Face processing failed" });
-            }
-
-            res.status(201).json({ success: true, message: "Voter added successfully", user: newUser });
-        });
-
-    } catch (error) {
-        console.error("Error:", error.message);
-        res.status(400).json({ success: false, message: error.message });
+    if (!imagePath) {
+        return res.status(400).json({ success: false, message: "No image received!" });
     }
+
+    console.log(`📸 Processing face for voter ID: ${voter_id}, Image Path: ${imagePath}`);
+
+    // ✅ Call Python script with image path
+    exec(`python add_faces.py ${voter_id} "${imagePath}"`, (error, stdout, stderr) => {
+        console.log("Python Output:", stdout);
+        console.log("Python Error:", stderr);
+
+        if (error) {
+            return res.status(500).json({ success: false, message: "Face processing failed!" });
+        }
+        return res.json({ success: true, message: "Face registered successfully!" });
+    });
 });
+
 
 // Voter Login with Face Recognition
 router.post("/login", async (req, res) => {
