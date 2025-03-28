@@ -8,8 +8,15 @@ const { updateGoogleSheets } = require("../utils/updateGoogleSheets"); // ✅ Im
 
 const router = express.Router();
 
-// Ensure Python Path is Correct
-const pythonPath = "C:\\Users\\nandh\\OneDrive\\Desktop\\Online_Voting\\online-voting\\backend\\.venv\\Scripts\\python.exe";
+// Ensure Python Path is Correctconst { spawn } = require("child_process");
+
+// Determine Python executable dynamically
+const pythonPath = process.env.RAILWAY_ENV ? "python3" : path.join(__dirname, "..", ".venv", "Scripts", "python.exe");
+
+console.log("Using Python Path:", pythonPath);
+
+const pythonProcess = spawn(pythonPath, ["backend/FaceRecognition/add_faces.py"]);
+
 
 // Ensure `uploads` directory exists
 const uploadDir = path.join(__dirname, "../uploads");
@@ -110,7 +117,8 @@ router.post("/login", async (req, res) => {
             return res.status(400).json({ success: false, message: "Voter image file is missing from the server." });
         }
 
-        // **⬇️ Add These Lines Here**
+        // **⬇️ Fix: Select Python Path Based on Environment**
+        const pythonPath = process.env.RAILWAY_ENV ? "python3" : path.join(__dirname, "../.venv/Scripts/python.exe");
         const recognizeFacesScript = path.join(__dirname, "../FaceRecognition/recognize_faces.py");
 
         if (!fs.existsSync(recognizeFacesScript)) {
@@ -120,16 +128,22 @@ router.post("/login", async (req, res) => {
         console.log(`🔍 Running Face Recognition for Voter ID: ${voter_id}`);
 
         exec(`"${pythonPath}" "${recognizeFacesScript}" "${voter_id}" "${imagePath}"`, (error, stdout, stderr) => {
-            console.log(`Python Output: ${stdout.trim()}`);
+            if (error) {
+                console.error(`❌ Error Running Python Script: ${stderr}`);
+                return res.status(500).json({ success: false, message: "Face processing failed", error: stderr.trim() });
+            }
+
+            console.log(`✅ Python Output: ${stdout.trim()}`);
 
             if (stdout.includes(`MATCH: ${voter_id}`)) {
                 return res.json({ success: true, message: "Face matched, voter verified!" });
+            } else {
+                return res.status(401).json({ success: false, message: "Face does not match" });
             }
-            return res.status(401).json({ success: false, message: "Face does not match" });
         });
 
     } catch (error) {
-        console.error("Server error:", error);
+        console.error("❌ Server error:", error);
         res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 });
