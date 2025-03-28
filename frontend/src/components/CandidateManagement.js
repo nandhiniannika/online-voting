@@ -1,6 +1,10 @@
+
+
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./Candidate.css";
+
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
 
 const CandidateManagement = () => {
     const [candidates, setCandidates] = useState([]);
@@ -16,7 +20,7 @@ const CandidateManagement = () => {
 
     const fetchCandidates = async () => {
         try {
-            const response = await axios.get("http://localhost:5000/api/candidates");
+            const response = await axios.get(`${API_BASE_URL}/api/candidates`);
             setCandidates(response.data);
         } catch (error) {
             console.error("Error fetching candidates:", error);
@@ -27,6 +31,7 @@ const CandidateManagement = () => {
     const handleFileChange = (event) => {
         setLogo(event.target.files[0]);
     };
+
     const handleAddCandidate = async (event) => {
         event.preventDefault();
     
@@ -41,7 +46,7 @@ const CandidateManagement = () => {
         if (logo) formData.append("logo", logo);
     
         try {
-            await axios.post("http://localhost:5000/api/candidates/addCandidate", formData, {
+            await axios.post(`${API_BASE_URL}/api/candidates/addCandidate`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
     
@@ -49,13 +54,12 @@ const CandidateManagement = () => {
             fetchCandidates();
             setName("");
             setParty("");
-            setLogo();
+            setLogo(null);
         } catch (error) {
             console.error("Error adding candidate:", error);
             setMessage("Error adding candidate. Please try again.");
         }
     };
-    
     const handleUpdateCandidate = async (event) => {
         event.preventDefault();
     
@@ -72,7 +76,7 @@ const CandidateManagement = () => {
         }
     
         try {
-            await axios.put(`http://localhost:5000/api/candidates/updateCandidate/${editingCandidate._id}`, formData, {
+            await axios.put(`${API_BASE_URL}/${editingCandidate._id}`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
     
@@ -87,20 +91,17 @@ const CandidateManagement = () => {
             console.error("Error updating candidate:", error.response?.data || error.message);
         }
     };
-    
-    
 
     const handleDeleteCandidate = async (id) => {
         try {
-            await axios.delete(`http://localhost:5000/api/candidates/delete/${id}`);
+            await axios.delete(`${API_BASE_URL}/api/candidates/delete/${id}`);
             fetchCandidates();
             setMessage("Candidate deleted successfully!");
             setTimeout(() => setMessage(""), 3000);
         } catch (error) {
-            console.error("Error deleting candidate:", error.response?.data || error.message);
+            console.error("Error deleting candidate:", error);
         }
     };
-
     const handleEditCandidate = (candidate) => {
         setEditingCandidate(candidate);
         setName(candidate.name);
@@ -108,31 +109,12 @@ const CandidateManagement = () => {
         setLogo(null); // ✅ Reset logo input
     };
 
-    // const handleVote = async (candidateName) => {
-    //     try {
-    //         const response = await axios.post("http://localhost:5000/api/vote", { candidateName });
-
-    //         if (response.data.success) {
-    //             setMessage(`Vote recorded for ${candidateName}!`);
-    //             fetchCandidates(); // ✅ Refresh vote count
-    //         } else {
-    //             setMessage("Failed to cast vote. Try again.");
-    //         }
-
-    //         setTimeout(() => setMessage(""), 3000);
-    //     } catch (error) {
-    //         console.error("Error casting vote:", error.response?.data || error.message);
-    //         setMessage("Error casting vote. Try again.");
-    //         setTimeout(() => setMessage(""), 3000);
-    //     }
-    // };
 
     return (
         <div className="candidate-management_2">
             <h2 className="title_2">Candidate Management</h2>
-
             {message && <div className="message">{message}</div>}
-
+           
             <form onSubmit={handleAddCandidate}>
                 <div className="form-group">
                     <input type="text" placeholder="Candidate Name" value={name} className="input-field" onChange={(e) => setName(e.target.value)} required />
@@ -147,18 +129,17 @@ const CandidateManagement = () => {
             </form>
 
             <h3>Candidate List</h3>
-            <ul className="candidate-list_2">
-                {candidates.map((candidate) => (
+            <ul className="candidate-list-2">
+            {candidates.map((candidate) => (
                     <li key={candidate._id} className="candidate-card">
                         <div className="candidate-info-container">
-                            <img
-                                src={`http://localhost:5000/uploads/${candidate.logo}`}
-                                alt={candidate.name}
-                                className="candidate-logo_2"
-                                crossOrigin="anonymous"
-                                onError={(e) => { e.target.src = "/default-logo.png"; }}
-                            />
-                            <div className="candidate-details">
+                        <img
+                            src={`${API_BASE_URL}/uploads/${candidate.logo}`}
+                            alt={candidate.name}
+                            className="candidate-logo"
+                            onError={(e) => { e.target.src = "/default-logo.png"; }}
+                        />
+                        <div className="candidate-details">
                                 <h4 className="candidate-name">{candidate.name}</h4>
                                 <p className="candidate-party">{candidate.party}</p>
                                 <p className="vote-count">Votes: {candidate.voteCount}</p> {/* ✅ Fixed Vote Count Display */}
@@ -171,8 +152,7 @@ const CandidateManagement = () => {
                     </li>
                 ))}
             </ul>
-
-            {editingCandidate && (
+           {editingCandidate && (
                 <form className="update-form" onSubmit={handleUpdateCandidate}>
                     <h3>Update Candidate</h3>
                     <input type="text" value={name} className="input-field" onChange={(e) => setName(e.target.value)} required />
@@ -183,7 +163,7 @@ const CandidateManagement = () => {
                         <button type="button" onClick={() => setEditingCandidate(null)} className="cancel-button">Cancel</button>
                     </div>
                 </form>
-            )}
+            )}  
         </div>
     );
 };

@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import "./Login.css";
 import axios from "axios";
 
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000"; // Dynamic API URL
+
 const Login = () => {
     const [id, setId] = useState("");
     const [error, setError] = useState("");
@@ -28,7 +30,7 @@ const Login = () => {
         }
 
         try {
-            const response = await axios.post("http://localhost:5000/api/users/login", { voter_id: trimmedId });
+            const response = await axios.post(`${API_URL}/api/users/login`, { voter_id: trimmedId });
 
             if (response.data.success) {
                 localStorage.setItem("voter_id", trimmedId); // ✅ Store voter_id in localStorage

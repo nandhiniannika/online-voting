@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "./VoterDashboard.css";
 
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
 const VoterDashboard = () => {
   const [candidates, setCandidates] = useState([]);
   const [isVerified, setIsVerified] = useState(false);
@@ -21,7 +23,7 @@ const VoterDashboard = () => {
 
       try {
         console.log(`🔍 Checking voter ID: ${voterId}`);
-        const response = await axios.get(`http://localhost:5000/api/voter/check-vote/${voterId}`);
+        const response = await axios.get(`${API_URL}/api/voter/check-vote/${voterId}`);
 
         console.log("✅ API Response:", response.data);
 
@@ -54,7 +56,7 @@ const VoterDashboard = () => {
 
   const fetchCandidates = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/candidates");
+      const response = await axios.get(`${API_URL}/api/candidates`);
       setCandidates(response.data);
     } catch (error) {
       console.error("❌ Error fetching candidates:", error);
@@ -69,7 +71,7 @@ const VoterDashboard = () => {
     try {
       console.log(`🗳 Voting for Candidate: ${candidate.name}`);
 
-      const response = await axios.post("http://localhost:5000/api/voter/vote", {
+      const response = await axios.post(`${API_URL}/api/voter/vote`, {
         voterId,
         candidateId: candidate._id,
       });
@@ -106,7 +108,7 @@ const VoterDashboard = () => {
               {candidates.map((candidate) => (
                 <div className="candidate-row" key={candidate._id}>
                   <img
-                    src={`http://localhost:5000/uploads/${candidate.logo}`}
+                    src={`${API_URL}/uploads/${candidate.logo}`}
                     alt={candidate.name}
                     className="candidate-logo"
                   />
