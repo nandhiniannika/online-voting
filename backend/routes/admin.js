@@ -56,9 +56,9 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
         const newUser = new User({ voter_id, image_filename });
         await newUser.save();
 
-        // Run `add_faces.py` for Face Processing
-        const imagePath = path.join(uploadDir, image_filename);
+        // **⬇️ Add These Lines Here**
         const addFacesScript = path.join(__dirname, "../FaceRecognition/add_faces.py");
+        const imagePath = path.join(uploadDir, image_filename);
 
         if (!fs.existsSync(addFacesScript)) {
             return res.status(500).json({ success: false, message: "Face processing script missing." });
@@ -81,6 +81,7 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
         res.status(400).json({ success: false, message: error.message });
     }
 });
+
 
 // Voter Login with Face Recognition
 router.post("/login", async (req, res) => {
@@ -107,6 +108,7 @@ router.post("/login", async (req, res) => {
             return res.status(400).json({ success: false, message: "Voter image file is missing from the server." });
         }
 
+        // **⬇️ Add These Lines Here**
         const recognizeFacesScript = path.join(__dirname, "../FaceRecognition/recognize_faces.py");
 
         if (!fs.existsSync(recognizeFacesScript)) {
@@ -129,6 +131,7 @@ router.post("/login", async (req, res) => {
         res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 });
+
 
 // Delete Voter
 router.delete("/delete/:id", async (req, res) => {
