@@ -18,14 +18,14 @@ const voterRoutes = require("./routes/voter");
 const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/voter_management_2";
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000"; // Update with your Vercel frontend URL
+const FRONTEND_URL = "https://online-voting-2-qh7w9801e-annikalla-nandhinis-projects.vercel.app" || "http://localhost:3000"; // Update with your Vercel frontend URL
 
 // ✅ Middleware
 
 // ✅ CORS Fix (Handles Preflight Requests)
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://online-voting-2-5ediog9ug-annikalla-nandhinis-projects.vercel.app"
+  "https://online-voting-2-qh7w9801e-annikalla-nandhinis-projects.vercel.app"
 ];
 
 app.use((req, res, next) => {
