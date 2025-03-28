@@ -1,24 +1,20 @@
-﻿# Use a base image with Node.js and Python support
+﻿# Use official Node.js image
 FROM node:18-bullseye
-
-# Install Python and necessary packages
-RUN apt update && apt install -y python3 python3-pip && ln -s /usr/bin/python3 /usr/bin/python
 
 # Set the working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files first to take advantage of caching
 COPY package.json package-lock.json ./
 
-# Install dependencies (with caching for better performance)
-RUN npm ci
+# Install dependencies
+RUN npm ci --legacy-peer-deps  # Removes --mount=type=cache
 
-
-# Copy the rest of the application
+# Copy the rest of the app
 COPY . .
 
-# Expose the backend port
+# Expose port (change if needed)
 EXPOSE 5000
 
 # Start the application
-CMD ["node", "index.js"]
+CMD ["npm", "start"]
