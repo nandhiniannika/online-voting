@@ -1,8 +1,8 @@
 ﻿# Use a base image with Node.js and Python support
 FROM node:18-bullseye
 
-# Install Python and necessary packages
-RUN apt update && apt install -y python python-pip && ln -s /usr/bin/python3 /usr/bin/python
+# Update package lists and install Python 3 & Pip
+RUN apt update && apt install -y python3 python3-pip && ln -s /usr/bin/python3 /usr/bin/python
 
 # Set the working directory
 WORKDIR /app
@@ -13,7 +13,7 @@ COPY package.json package-lock.json ./
 # Install dependencies
 RUN npm install
 
-# Copy the rest ogit push origin mainf the application
+# Copy the rest of the application
 COPY . .
 
 # Expose the backend port

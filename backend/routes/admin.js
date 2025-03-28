@@ -3,7 +3,7 @@ const multer = require("multer");
 const User = require("../models/User");
 const path = require("path");
 const fs = require("fs");
-const { exec } = require("child_process");
+const { exec, spawn } = require("child_process");
 const { updateGoogleSheets } = require("../utils/updateGoogleSheets"); // ✅ Import the Voter model
 
 const router = express.Router();
