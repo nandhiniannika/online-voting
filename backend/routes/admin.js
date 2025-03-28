@@ -9,7 +9,7 @@ const { updateGoogleSheets } = require("../utils/updateGoogleSheets"); // ✅ Im
 const router = express.Router();
 
 // Ensure Python Path is Correct
-const pythonPath = "C:\\Users\\nandh\\OneDrive\\Desktop\\Online_Voting\\online-voting\\.venv\\Scripts\\python.exe";
+const pythonPath = "C:\\Users\\nandh\\OneDrive\\Desktop\\Online_Voting\\online-voting\\backend\\.venv\\Scripts\\python.exe";
 
 // Ensure `uploads` directory exists
 const uploadDir = path.join(__dirname, "../uploads");
@@ -66,16 +66,18 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
 
         console.log(`Executing Python script: ${addFacesScript} with Voter ID: ${voter_id}`);
 
-        exec(`"${pythonPath}" "${addFacesScript}" "${voter_id}" "${imagePath}"`, (error, stdout, stderr) => {
-            console.log(`Python Output: ${stdout.trim()}`);
-
-            if (error || stderr) {
-                return res.status(500).json({ success: false, message: "Face processing failed" });
+        exec(`"${pythonPath}" "${addFacesScript}" "${voter_id}"`, (error, stdout, stderr) => {
+            console.log("📝 Python STDOUT:", stdout.trim());
+            console.error("⚠️ Python STDERR:", stderr.trim()); // Log errors
+        
+            if (error || stderr.includes("ERROR")) {
+                return res.status(500).json({ success: false, message: "Face processing failed", error: stderr.trim() });
             }
-
-            res.status(201).json({ success: true, message: "Voter added successfully", user: newUser });
+        
+            res.status(201).json({ success: true, message: "Voter added successfully" });
         });
-
+        
+        
     } catch (error) {
         console.error("Error:", error.message);
         res.status(400).json({ success: false, message: error.message });
