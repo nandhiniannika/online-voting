@@ -1,6 +1,9 @@
 ﻿# Use a base image with Node.js and Python support
 FROM node:18-bullseye
 
+# Enable BuildKit (Required for --mount)
+# Not needed in Dockerfile but should be enabled while building: `DOCKER_BUILDKIT=1`
+
 # Update package lists and install Python 3 & Pip
 RUN apt update && apt install -y python3 python3-pip && ln -s /usr/bin/python3 /usr/bin/python
 
@@ -10,10 +13,10 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json ./
 
-# Install dependencies with caching optimization
+# Install dependencies with BuildKit caching (Optional, requires BuildKit enabled)
 RUN --mount=type=cache,target=/app/node_modules/.cache npm install
 
-# Copy the rest of the application files
+# Copy the rest of the application
 COPY . .
 
 # Expose the backend port
