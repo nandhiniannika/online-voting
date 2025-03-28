@@ -2,7 +2,7 @@
 FROM node:18-bullseye
 
 # Install Python and necessary packages
-RUN apt update && apt install -y python python-pip && ln -s /usr/bin/python3 /usr/bin/python
+RUN apt update && apt install -y python3 python3-pip && ln -s /usr/bin/python3 /usr/bin/python
 
 # Set the working directory
 WORKDIR /app
@@ -10,10 +10,10 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json ./
 
-# Install dependencies
-RUN npm install
+# Ensure proper installation of dependencies
+RUN npm ci  # Use `npm ci` instead of `npm install` for a clean install
 
-# Copy the rest ogit push origin mainf the application
+# Copy the rest of the application
 COPY . .
 
 # Expose the backend port
