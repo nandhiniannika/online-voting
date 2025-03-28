@@ -4,6 +4,7 @@ const cors = require("cors");
 const morgan = require("morgan");
 const dotenv = require("dotenv");
 const path = require("path");
+const { exec } = require("child_process");
 
 dotenv.config(); // Load environment variables from .env
 
@@ -18,44 +19,52 @@ const voterRoutes = require("./routes/voter");
 const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/voter_management_2";
-const FRONTEND_URL = "https://online-voting-2-qh7w9801e-annikalla-nandhinis-projects.vercel.app" || "http://localhost:3000"; // Update with your Vercel frontend URL
+const FRONTEND_URL = process.env.FRONTEND_URL || "https://online-voting-2-qh7w9801e-annikalla-nandhinis-projects.vercel.app";
 
-// ✅ Middleware
-
-// ✅ CORS Fix (Handles Preflight Requests)
+// ✅ Use CORS Middleware
 const allowedOrigins = [
   "http://localhost:3000",
   "https://online-voting-2-qh7w9801e-annikalla-nandhinis-projects.vercel.app"
 ];
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  }
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
 
-  // Handle Preflight Requests
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-
-  next();
-});
-
-// ✅ JSON Middleware (Moved Before Routes)
+// ✅ Middleware
 app.use(express.json());
 app.use(morgan("dev")); // Logging
 
-// ✅ Serve Static Files (Fix `/uploads` issue)
+// ✅ Serve Static Files
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ✅ Allow Cross-Origin for Images
 app.use((req, res, next) => {
   res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
   next();
+});
+
+// ✅ Check if Python is Installed
+app.get("/check-python", (req, res) => {
+    exec("python3 --version", (error, stdout, stderr) => {
+        if (error) {
+            return res.json({ success: false, message: stderr || error.message });
+        }
+        res.json({ success: true, pythonVersion: stdout.trim() });
+    });
+});
+
+// ✅ Run Python Script (`add_faces.py`)
+app.post("/run-python", (req, res) => {
+    exec("python3 /app/backend/FaceRecognition/add_faces.py", (error, stdout, stderr) => {
+        if (error) {
+            return res.json({ success: false, message: stderr || error.message });
+        }
+        res.json({ success: true, output: stdout.trim() });
+    });
 });
 
 // ✅ MongoDB Connection
