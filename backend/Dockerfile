@@ -10,10 +10,10 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies with caching optimization
+RUN --mount=type=cache,target=/app/node_modules/.cache npm install
 
-# Copy the rest of the application
+# Copy the rest of the application files
 COPY . .
 
 # Expose the backend port
