@@ -1,11 +1,8 @@
-# Use a base image with Node.js and Python
+# Use a base image with Node.js and Python support
 FROM node:18-bullseye
 
-# Install Python
-RUN apt update && apt install -y python3 python3-pip
-
-# Set python3 as the default python command
-RUN ln -s /usr/bin/python3 /usr/bin/python
+# Install Python and necessary packages
+RUN apt update && apt install -y python3 python3-pip && ln -s /usr/bin/python3 /usr/bin/python
 
 # Set the working directory
 WORKDIR /app
