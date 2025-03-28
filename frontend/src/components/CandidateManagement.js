@@ -5,7 +5,7 @@ import axios from "axios";
 import "./Candidate.css";
 
 
-const API_URL = process.env.REACT_APP_API_URL || "https://online-voting-1-hn3o.onrender.com"; 
+const API_BASE_URL = process.env.REACT_APP_API_URL || "https://online-voting-1-hn3o.onrender.com"; 
 
 const CandidateManagement = () => {
     const [candidates, setCandidates] = useState([]);

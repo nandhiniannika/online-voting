@@ -18,20 +18,32 @@ const voterRoutes = require("./routes/voter");
 const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/voter_management_2";
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000"; // Add your Vercel frontend URL here
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000"; // Update this with your Vercel frontend URL
 
 // ✅ Middleware
-app.use(
+
+// ✅ CORS Fix (Dynamic Origin Handling)
+const allowedOrigins = [
+    "http://localhost:3000",
+    "https://online-voting-2-5ediog9ug-annikalla-nandhinis-projects.vercel.app"
+  ];
+  
+  app.use(
     cors({
-      origin: [
-        "http://localhost:3000", // Local development frontend
-        "https://online-voting-2-odf53k50t-annikalla-nandhinis-projects.vercel.app" // Vercel frontend
-      ],
+      origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE"],
+      allowedHeaders: ["Content-Type", "Authorization"],
     })
   );
   
+
 app.use(express.json()); // Built-in JSON parser
 app.use(morgan("dev")); // Logging
 
@@ -58,7 +70,7 @@ mongoose
   });
 
 // ✅ API Routes
-app.use("/api/auth", authRoutes); // Login route exists here
+app.use("/api/auth", authRoutes); // Login route
 app.use("/api/users", adminRoutes);
 app.use("/api/candidates", candidateRoutes);
 app.use("/api/votes", voteRoutes);
