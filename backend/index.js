@@ -22,12 +22,16 @@ const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000"; // Add
 
 // ✅ Middleware
 app.use(
-  cors({
-    origin: "https://online-voting-2-odf53k50t-annikalla-nandhinis-projects.vercel.app", // Allow only your frontend
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
-  })
-);
+    cors({
+      origin: [
+        "http://localhost:3000", // Local development frontend
+        "https://online-voting-2-odf53k50t-annikalla-nandhinis-projects.vercel.app" // Vercel frontend
+      ],
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE"],
+    })
+  );
+  
 app.use(express.json()); // Built-in JSON parser
 app.use(morgan("dev")); // Logging
 
