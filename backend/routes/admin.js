@@ -41,28 +41,38 @@ router.get("/", async (req, res) => {
 
 // Add Voter (Admin Functionality)
 // Add Voter (Admin Functionality)
-router.post("/addvoter", upload.single("image"), async (req, res) => {
-    const voter_id = req.body.voter_id;
-    const imagePath = req.file?.path; // Ensure file path is correct
+router.post("/addvoter", async (req, res) => {
+    try {
+        const { voter_id, image_path } = req.body;
 
-    if (!imagePath) {
-        return res.status(400).json({ success: false, message: "No image received!" });
-    }
-
-    console.log(`📸 Processing face for voter ID: ${voter_id}, Image Path: ${imagePath}`);
-
-    // ✅ Call Python script with image path
-    exec(`python add_faces.py ${voter_id} "${imagePath}"`, (error, stdout, stderr) => {
-        console.log("Python Output:", stdout);
-        console.log("Python Error:", stderr);
-
-        if (error) {
-            return res.status(500).json({ success: false, message: "Face processing failed!" });
+        if (!voter_id || !image_path) {
+            return res.status(400).json({ success: false, message: "Missing voter ID or image path" });
         }
-        return res.json({ success: true, message: "Face registered successfully!" });
-    });
-});
 
+        // ✅ Corrected script path inside backend/FaceRecognition/
+        const scriptPath = "/opt/render/project/src/backend/FaceRecognition/add_faces.py";
+
+        console.log(`📸 Processing face for voter ID: ${voter_id}, Image Path: ${image_path}`);
+
+        // ✅ Execute the Python script
+        exec(`python3 ${scriptPath} ${voter_id} ${image_path}`, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`❌ Execution Error: ${error.message}`);
+                return res.status(500).json({ success: false, message: "Face processing failed" });
+            }
+            if (stderr) {
+                console.error(`⚠️ Python Script Error: ${stderr}`);
+            }
+            console.log(`✅ Python Output: ${stdout}`);
+
+            return res.status(200).json({ success: true, message: "Face processing successful" });
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+});
 
 // Voter Login with Face Recognition
 router.post("/login", async (req, res) => {
