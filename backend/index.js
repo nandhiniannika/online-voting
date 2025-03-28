@@ -57,10 +57,9 @@ app.get("/check-python", (req, res) => {
     });
 });
 
-
 // ✅ Run Python Script (`add_faces.py`)
 app.post("/run-python", (req, res) => {
-    exec("python /app/backend/FaceRecognition/add_faces.py", (error, stdout, stderr) => {
+    exec("python3 /app/backend/FaceRecognition/add_faces.py", (error, stdout, stderr) => {
         if (error) {
             return res.json({ success: false, message: stderr || error.message });
         }
