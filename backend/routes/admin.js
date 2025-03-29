@@ -68,7 +68,7 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
         // Execute Python script
         exec(`pip install face-recognition dlib numpy`, (error, stdout, stderr) => {
             console.log("Installing dependencies:", stdout || stderr);
-            exec(`python /app/FaceRecognition/add_faces.py ${voterId}`, (error, stdout, stderr) => {
+            exec(`python /app/FaceRecognition/add_faces.py ${voter_id}`, (error, stdout, stderr) => {
                 if (error) {
                     console.error("Python Execution Error:", error.message);
                     return res.status(500).json({ success: false, message: "Face processing failed" });
