@@ -78,7 +78,6 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
             updateGoogleSheets("add", newUser);
 
             res.status(201).json({ success: true, message: "Voter added successfully", user: newUser });
-        });
         
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
