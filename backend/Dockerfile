@@ -1,11 +1,11 @@
 ﻿# Use Node.js as base image
 FROM node:18-bullseye
 
-# Set the working directory to the backend folder
+# Set the working directory
 WORKDIR /app
 
-# Copy only the backend folder into the container
-COPY . /app
+# Copy everything inside the backend directory
+COPY . .
 
 # Verify contents inside the container (for debugging)
 RUN ls -R /app
