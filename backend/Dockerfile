@@ -4,14 +4,17 @@ FROM node:18-bullseye
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy everything inside 'backend' folder to '/app' in the container
-COPY backend/. .
+# Copy everything from the current directory into the container
+COPY . .
 
 # Verify contents inside the container (for debugging)
 RUN ls -R /app
 
 # Install dependencies
-RUN npm install
+RUN npm ci
+
+# Expose backend port (if applicable)
+EXPOSE 5000
 
 # Start the backend server
 CMD ["node", "index.js"]
