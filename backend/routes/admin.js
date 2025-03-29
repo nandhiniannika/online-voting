@@ -12,9 +12,9 @@ const isWindows = process.platform === "win32";
 // Fix Python path
 const pythonPath = isWindows
     ? path.join(__dirname, "../../.venv/Scripts/python.exe")  // Windows
-    : path.join(__dirname, "../../.venv/bin/python3");  // Linux/Mac
+    : "/app/.venv/bin/python";  // Linux on Railway
 
-console.log("Using Python Path:", pythonPath);    // Linux/Mac
+console.log(`Using Python Path: ${pythonPath}`);   // Linux/Mac
 
 // Ensure `uploads` directory exists
 const uploadDir = path.join(__dirname, "../uploads");
