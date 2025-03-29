@@ -7,12 +7,9 @@ const { exec } = require("child_process");
 const { updateGoogleSheets } = require("../utils/updateGoogleSheets");
 
 const router = express.Router();
-const isWindows = process.platform === "win32";
 
 // Fix Python path
-const pythonPath = isWindows
-    ? path.join(__dirname, "../../.venv/Scripts/python.exe")  // Windows
-    : "/app/.venv/bin/python3";  // Linux on Railway
+const pythonPath = path.join(__dirname, "../.venv/Scripts/python.exe");
 
 console.log(`Using Python Path: ${pythonPath}`);   // Linux/Mac
 
