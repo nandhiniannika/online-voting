@@ -65,12 +65,14 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
         }
 
         // Execute the script with only the voter_id as argument
-        exec(`python FaceRecognition/add_faces.py ${voter_id}`, (error, stdout, stderr) => {
+        exec(`"${pythonPath}" "FaceRecognition/add_faces.py" "${voter_id}"`, (error, stdout, stderr) => {
             if (error || stderr) {
-                console.error(`Error: ${error}`);
-                console.error(`stderr: ${stderr}`);
+                console.error(`Error executing Python script:`, error, stderr);
                 return res.status(500).json({ success: false, message: "Face processing failed" });
             }
+            res.status(201).json({ success: true, message: "Voter added successfully" });
+        });
+        
 
             // Update Google Sheets after successful addition
             updateGoogleSheets("add", newUser);
