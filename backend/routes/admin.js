@@ -8,9 +8,11 @@ const { updateGoogleSheets } = require("../utils/updateGoogleSheets");
 
 const router = express.Router();
 const isWindows = process.platform === "win32";
+
+// Fix Python path
 const pythonPath = isWindows
-    ? path.resolve(__dirname, "../../.venv/Scripts/python.exe")  // Windows
-    : path.resolve(__dirname, "../../.venv/bin/python");  // Linux/macOS
+    ? path.join(__dirname, "../../.venv/Scripts/python.exe")  // Windows
+    : path.join(__dirname, "../../.venv/bin/python3");  // Linux/Mac
 
 console.log("Using Python Path:", pythonPath);    // Linux/Mac
 
