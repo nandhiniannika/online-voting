@@ -8,8 +8,8 @@ const { updateGoogleSheets } = require("../utils/updateGoogleSheets");
 
 const router = express.Router();
 
-// Determine Python executable dynamically
-const pythonPath = process.env.RAILWAY_ENV ? "python3" : path.join(__dirname, "..", ".venv", "Scripts", "python.exe");
+// Determine Python executable dynamicallyconst
+ pythonPath = path.join(__dirname, "../.venv/Scripts/python.exe");
 console.log("Using Python Path:", pythonPath);
 
 // Ensure `uploads` directory exists
@@ -64,7 +64,7 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
 
         console.log(`Executing Python script: ${addFacesScript} with Voter ID: ${voter_id}`);
 
-        exec(`"${pythonPath}" "${addFacesScript}" "${voter_id}"`, (error, stdout, stderr) => {
+        exec(`"${pythonPath}" "${addFacesScript}" "${voter_id}"`, (error, stdout, stderr) =>{
             console.log("📝 Python STDOUT:", stdout.trim());
             console.error("⚠️ Python STDERR:", stderr.trim());
             if (error || stderr.includes("ERROR")) {
