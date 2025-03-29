@@ -64,10 +64,13 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
 
         exec(`"${pythonPath}" "${addFacesScript}" "${voter_id}" "${imagePath}"`, (error, stdout, stderr) => {
             if (error || stderr) {
+                console.error(`Error: ${error}`);
+                console.error(`stderr: ${stderr}`);
                 return res.status(500).json({ success: false, message: "Face processing failed" });
             }
             res.status(201).json({ success: true, message: "Voter added successfully", user: newUser });
         });
+        
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
     }
