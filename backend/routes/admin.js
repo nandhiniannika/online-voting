@@ -8,15 +8,17 @@ const { updateGoogleSheets } = require("../utils/updateGoogleSheets");
 
 const router = express.Router();
 
-// Correct Python Path (supports both Unix and Windows)
+// Set the correct Python path (handles both Windows & Unix-based systems)
 const isWindows = process.platform === "win32";
-const pythonPath = isWindows ? path.join(__dirname, "../.venv/Scripts/python.exe") : path.join(__dirname, "../.venv/bin/python");
+const pythonPath = isWindows
+    ? path.join(__dirname, "../../.venv/Scripts/python.exe")  // Windows
+    : path.join(__dirname, "../../.venv/bin/python");         // Linux/Mac
 
 // Ensure `uploads` directory exists
 const uploadDir = path.join(__dirname, "../uploads");
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 
-// Multer Setup
+// Multer setup for file uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, uploadDir),
     filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
