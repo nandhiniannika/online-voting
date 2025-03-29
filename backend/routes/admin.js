@@ -10,9 +10,7 @@ const os = require("os");
 const router = express.Router();
 
 // Determine Python executable dynamically
-const pythonPath = os.platform() === "win32" 
-    ? path.join(__dirname, "../.venv/Scripts/python.exe") // Windows
-    : path.join(__dirname, "../.venv/bin/python3"); // Linux (Railway)
+const pythonPath = fs.existsSync("/usr/bin/python3") ? "/usr/bin/python3" : "python3";
 
 console.log("Using Python Path:", pythonPath);
 
@@ -68,7 +66,7 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
 
         console.log(`Executing Python script: ${addFacesScript} with Voter ID: ${voter_id}`);
 
-        exec(`"${pythonPath}" "${addFacesScript}" "${voter_id}"`, (error, stdout, stderr) => {
+        exec(`${pythonPath} "${addFacesScript}" "${voter_id}"`, (error, stdout, stderr) => {
             console.log("📝 Python STDOUT:", stdout.trim());
             console.error("⚠️ Python STDERR:", stderr.trim());
             if (error || stderr.includes("ERROR")) {
@@ -106,7 +104,7 @@ router.post("/login", async (req, res) => {
         }
 
         console.log(`🔍 Running Face Recognition for Voter ID: ${voter_id}`);
-        exec(`"${pythonPath}" "${recognizeFacesScript}" "${voter_id}" "${imagePath}"`, (error, stdout, stderr) => {
+        exec(`${pythonPath} "${recognizeFacesScript}" "${voter_id}" "${imagePath}"`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`❌ Error Running Python Script: ${stderr}`);
                 return res.status(500).json({ success: false, message: "Face processing failed", error: stderr.trim() });
