@@ -8,10 +8,9 @@ const { updateGoogleSheets } = require("../utils/updateGoogleSheets");
 
 const router = express.Router();
 
-// Fix Python path
+// Correct Python path
 const pythonPath = path.join(__dirname, "../.venv/Scripts/python.exe");
-
-console.log(`Using Python Path: ${pythonPath}`);   // Linux/Mac
+console.log(`Using Python Path: ${pythonPath}`);
 
 // Ensure `uploads` directory exists
 const uploadDir = path.join(__dirname, "../uploads");
@@ -57,27 +56,24 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
         const newUser = new User({ voter_id, image_filename });
         await newUser.save();
 
-        const addFacesScript = path.join(__dirname, "../FaceRecognition/add_faces.py");
-
+        const addFacesScript = path.resolve(__dirname, "../FaceRecognition/add_faces.py");
         if (!fs.existsSync(addFacesScript)) {
             return res.status(500).json({ success: false, message: "Face processing script missing." });
         }
 
         // Execute the script with only the voter_id as argument
-        exec(`"${pythonPath}" "FaceRecognition/add_faces.py" "${voter_id}"`, (error, stdout, stderr) => {
+        exec(`"${pythonPath}" "${addFacesScript}" "${voter_id}"`, (error, stdout, stderr) => {
             if (error || stderr) {
                 console.error(`Error executing Python script:`, error, stderr);
                 return res.status(500).json({ success: false, message: "Face processing failed" });
             }
-            res.status(201).json({ success: true, message: "Voter added successfully" });
-        });
-        
 
             // Update Google Sheets after successful addition
             updateGoogleSheets("add", newUser);
 
-            res.status(201).json({ success: true, message: "Voter added successfully", user: newUser });
-        
+            return res.status(201).json({ success: true, message: "Voter added successfully", user: newUser });
+        });
+
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
     }
@@ -97,7 +93,7 @@ router.post("/login", async (req, res) => {
             return res.status(400).json({ success: false, message: "Voter image file is missing from the server." });
         }
 
-        const recognizeFacesScript = path.join(__dirname, "../FaceRecognition/recognize_faces.py");
+        const recognizeFacesScript = path.resolve(__dirname, "../FaceRecognition/recognize_faces.py");
         if (!fs.existsSync(recognizeFacesScript)) {
             return res.status(500).json({ success: false, message: "Face recognition script is missing." });
         }
