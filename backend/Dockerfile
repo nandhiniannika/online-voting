@@ -1,20 +1,17 @@
-﻿# Use Node.js base image
+﻿# Use Node.js as base image
 FROM node:18-bullseye
 
-# Set the working directory to /app (NOT /app/backend)
+# Set the working directory to the backend folder
 WORKDIR /app
 
-# Copy only package.json and package-lock.json first (for caching)
-COPY package.json package-lock.json ./
+# Copy only the backend folder into the container
+COPY . /app
+
+# Verify contents inside the container (for debugging)
+RUN ls -R /app
 
 # Install dependencies
-RUN npm install --legacy-peer-deps
+RUN npm install
 
-# Copy the entire backend folder contents into /app
-COPY . .
-
-# Expose the port your server runs on (change if needed)
-EXPOSE 5000
-
-# Start the app
+# Start the backend server
 CMD ["node", "index.js"]
