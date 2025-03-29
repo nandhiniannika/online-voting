@@ -4,11 +4,11 @@ FROM node:18-bullseye
 # Set the working directory
 WORKDIR /app
 
-# Copy package files first to take advantage of caching
+# Copy package files first
 COPY package.json package-lock.json ./
 
 # Install dependencies
-RUN npm ci --legacy-peer-deps  # Removes --mount=type=cache
+RUN npm ci --legacy-peer-deps
 
 # Copy the rest of the app
 COPY . .
