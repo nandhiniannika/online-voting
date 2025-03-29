@@ -9,7 +9,7 @@ const { updateGoogleSheets } = require("../utils/updateGoogleSheets");
 const router = express.Router();
 
 // Correct Python path
-const pythonPath = path.join(__dirname, "../.venv/Scripts/python.exe");
+const pythonPath = path.join(__dirname, "../.venv/Scripts/python3.exe");
 console.log(`Using Python Path: ${pythonPath}`);
 
 // Ensure `uploads` directory exists
