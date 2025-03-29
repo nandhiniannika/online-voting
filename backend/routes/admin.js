@@ -63,6 +63,7 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
         if (!fs.existsSync(addFacesScript)) {
             return res.status(500).json({ success: false, message: "Face processing script missing." });
         }
+        
 
         // Execute Python script
         exec(`pip install face-recognition dlib numpy`, (error, stdout, stderr) => {
