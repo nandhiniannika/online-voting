@@ -9,8 +9,14 @@ const os = require("os");
 
 const router = express.Router();
 
-// Determine Python executable dynamically
-const pythonPath = fs.existsSync("/usr/bin/python3") ? "/usr/bin/python3" : "python3";
+let pythonPath;
+
+// Check OS type
+if (os.platform() === "win32") {
+    pythonPath = path.join(__dirname, "../.venv/Scripts/python.exe");
+} else {
+    pythonPath = fs.existsSync("/usr/bin/python3") ? "/usr/bin/python3" : path.join(__dirname, "../.venv/bin/python3");
+}
 
 console.log("Using Python Path:", pythonPath);
 
