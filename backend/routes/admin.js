@@ -7,12 +7,12 @@ const { exec } = require("child_process");
 const { updateGoogleSheets } = require("../utils/updateGoogleSheets");
 
 const router = express.Router();
-
-// Set the correct Python path (handles both Windows & Unix-based systems)
 const isWindows = process.platform === "win32";
 const pythonPath = isWindows
-    ? path.join(__dirname, "../../.venv/Scripts/python.exe")  // Windows
-    : path.join(__dirname, "../../.venv/bin/python");         // Linux/Mac
+    ? path.resolve(__dirname, "../../.venv/Scripts/python.exe")  // Windows
+    : path.resolve(__dirname, "../../.venv/bin/python");  // Linux/macOS
+
+console.log("Using Python Path:", pythonPath);    // Linux/Mac
 
 // Ensure `uploads` directory exists
 const uploadDir = path.join(__dirname, "../uploads");
