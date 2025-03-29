@@ -12,7 +12,7 @@ const isWindows = process.platform === "win32";
 // Fix Python path
 const pythonPath = isWindows
     ? path.join(__dirname, "../../.venv/Scripts/python.exe")  // Windows
-    : "/app/.venv/bin/python";  // Linux on Railway
+    : "/app/.venv/bin/python3";  // Linux on Railway
 
 console.log(`Using Python Path: ${pythonPath}`);   // Linux/Mac
 
