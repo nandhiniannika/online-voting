@@ -8,9 +8,12 @@ const { updateGoogleSheets } = require("../utils/updateGoogleSheets");
 
 const router = express.Router();
 
-// Correct Python path
-const pythonPath = path.join(__dirname, "../.venv/bin/python3");
-console.log(`Using Python Path: ${pythonPath}`);
+// Determine Python path dynamically
+const pythonPath = process.platform === "win32"
+  ? path.join(__dirname, "..", ".venv", "Scripts", "python.exe") // Windows
+  : "/usr/bin/python3"; // Linux (fallback)
+
+console.log("Using Python Path:", pythonPath);
 
 // Ensure `uploads` directory exists
 const uploadDir = path.join(__dirname, "../uploads");
@@ -61,19 +64,19 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
             return res.status(500).json({ success: false, message: "Face processing script missing." });
         }
 
-        // Execute the script with only the voter_id as argument
-        exec(`"${pythonPath}" "${addFacesScript}" "${voter_id}"`, (error, stdout, stderr) => {
-            if (error || stderr) {
-                console.error(`Error executing Python script:`, error, stderr);
+        // Execute Python script
+        exec(`${pythonPath} "${addFacesScript}" "${voter_id}"`, (error, stdout, stderr) => {
+            if (error) {
+                console.error("Python Execution Error:", error.message);
                 return res.status(500).json({ success: false, message: "Face processing failed" });
             }
 
-            // Update Google Sheets after successful addition
-            updateGoogleSheets("add", newUser);
+            if (stderr) console.error("Python STDERR:", stderr);
+            console.log("Python STDOUT:", stdout);
 
+            updateGoogleSheets("add", newUser);
             return res.status(201).json({ success: true, message: "Voter added successfully", user: newUser });
         });
-
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
     }
@@ -98,7 +101,7 @@ router.post("/login", async (req, res) => {
             return res.status(500).json({ success: false, message: "Face recognition script is missing." });
         }
 
-        exec(`"${pythonPath}" "${recognizeFacesScript}" "${voter_id}" "${imagePath}"`, (error, stdout, stderr) => {
+        exec(`${pythonPath} "${recognizeFacesScript}" "${voter_id}" "${imagePath}"`, (error, stdout, stderr) => {
             if (stdout.includes(`MATCH: ${voter_id}`)) {
                 return res.json({ success: true, message: "Face matched, voter verified!" });
             }
@@ -118,47 +121,10 @@ router.delete("/delete/:id", async (req, res) => {
         const imagePath = path.join(uploadDir, deletedUser.image_filename);
         if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
 
-        // Update Google Sheets after successful deletion
         updateGoogleSheets("delete", deletedUser);
-
         res.json({ success: true, message: "Voter deleted" });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
-    }
-});
-
-// Update Voter
-router.put("/update/:id", upload.single("image"), async (req, res) => {
-    try {
-        const { voter_id } = req.body;
-        if (voter_id && voter_id.length !== 12) {
-            return res.status(400).json({ success: false, message: "Voter ID must be exactly 12 characters long" });
-        }
-
-        const user = await User.findById(req.params.id);
-        if (!user) return res.status(404).json({ success: false, message: "Voter not found" });
-
-        let updatedFields = { voter_id: voter_id || user.voter_id };
-
-        if (req.file) {
-            const newImageFilename = req.file.filename;
-            const newImagePath = path.join(uploadDir, newImageFilename);
-
-            if (user.image_filename) {
-                const oldImagePath = path.join(uploadDir, user.image_filename);
-                if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
-            }
-            updatedFields.image_filename = newImageFilename;
-        }
-
-        const updatedUser = await User.findByIdAndUpdate(req.params.id, updatedFields, { new: true });
-
-        // Update Google Sheets after successful update
-        updateGoogleSheets("update", updatedUser);
-
-        res.json({ success: true, message: "Voter updated successfully", user: updatedUser });
-    } catch (error) {
-        res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 });
 
