@@ -1,6 +1,7 @@
-numpy
-opencv-python
 face-recognition
-pandas
+dlib
+opencv-python
+numpy
 flask
 flask-cors
+pandas
