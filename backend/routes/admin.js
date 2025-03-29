@@ -56,9 +56,9 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
         const newUser = new User({ voter_id, image_filename });
         await newUser.save();
 
-        // **⬇️ Add These Lines Here**
-        const addFacesScript = path.join(__dirname, "../FaceRecognition/add_faces.py");
+        // Run `add_faces.py` for Face Processing
         const imagePath = path.join(uploadDir, image_filename);
+        const addFacesScript = path.join(__dirname, "../FaceRecognition/add_faces.py");
 
         if (!fs.existsSync(addFacesScript)) {
             return res.status(500).json({ success: false, message: "Face processing script missing." });
