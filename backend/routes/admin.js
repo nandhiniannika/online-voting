@@ -9,9 +9,9 @@ const { updateGoogleSheets } = require("../utils/updateGoogleSheets");
 const router = express.Router();
 
 // Determine Python path dynamically
-const pythonPath = process.platform === "win32"
-  ? path.join(__dirname, "..", ".venv", "Scripts", "python.exe") // Windows
-  : "/usr/bin/python3"; // Linux (fallback)
+const pythonPath = process.env.PYTHON_PATH || "python3"; // Auto-detect in Railway
+console.log("Using Python Path:", pythonPath);
+
 
 console.log("Using Python Path:", pythonPath);
 
@@ -65,18 +65,21 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
         }
 
         // Execute Python script
-        exec(`${pythonPath} "${addFacesScript}" "${voter_id}"`, (error, stdout, stderr) => {
-            if (error) {
-                console.error("Python Execution Error:", error.message);
-                return res.status(500).json({ success: false, message: "Face processing failed" });
-            }
-
-            if (stderr) console.error("Python STDERR:", stderr);
-            console.log("Python STDOUT:", stdout);
-
-            updateGoogleSheets("add", newUser);
-            return res.status(201).json({ success: true, message: "Voter added successfully", user: newUser });
+        exec(`pip install face-recognition dlib numpy`, (error, stdout, stderr) => {
+            console.log("Installing dependencies:", stdout || stderr);
+            exec(`${pythonPath} "${addFacesScript}" "${voter_id}"`, (error, stdout, stderr) => {
+                if (error) {
+                    console.error("Python Execution Error:", error.message);
+                    return res.status(500).json({ success: false, message: "Face processing failed" });
+                }
+                console.log("Python STDOUT:", stdout);
+                return res.status(201).json({ success: true, message: "Voter added successfully" });
+            });
         });
+        
+
+            // updateGoogleSheets("add", newUser);
+            // return res.status(201).json({ success: true, message: "Voter added successfully", user: newUser });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
     }
