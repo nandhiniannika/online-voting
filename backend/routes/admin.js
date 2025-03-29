@@ -65,7 +65,7 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
         }
 
         // Execute the script with only the voter_id as argument
-        exec(`"${pythonPath}" "${addFacesScript}" "${voter_id}"`, (error, stdout, stderr) => {
+        exec(`python FaceRecognition/add_faces.py ${voter_id}`, (error, stdout, stderr) => {
             if (error || stderr) {
                 console.error(`Error: ${error}`);
                 console.error(`stderr: ${stderr}`);
