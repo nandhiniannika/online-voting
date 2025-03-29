@@ -3,20 +3,14 @@ const multer = require("multer");
 const User = require("../models/User");
 const path = require("path");
 const fs = require("fs");
-const { exec, spawn } = require("child_process");
-const { updateGoogleSheets } = require("../utils/updateGoogleSheets"); // ✅ Import the Voter model
+const { exec } = require("child_process");
+const { updateGoogleSheets } = require("../utils/updateGoogleSheets");
 
 const router = express.Router();
 
-// Ensure Python Path is Correctconst { spawn } = require("child_process");
-
 // Determine Python executable dynamically
 const pythonPath = process.env.RAILWAY_ENV ? "python3" : path.join(__dirname, "..", ".venv", "Scripts", "python.exe");
-
 console.log("Using Python Path:", pythonPath);
-
-const pythonProcess = spawn(pythonPath, ["backend/FaceRecognition/add_faces.py"]);
-
 
 // Ensure `uploads` directory exists
 const uploadDir = path.join(__dirname, "../uploads");
@@ -63,10 +57,7 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
         const newUser = new User({ voter_id, image_filename });
         await newUser.save();
 
-        // **⬇️ Add These Lines Here**
         const addFacesScript = path.join(__dirname, "../FaceRecognition/add_faces.py");
-        const imagePath = path.join(uploadDir, image_filename);
-
         if (!fs.existsSync(addFacesScript)) {
             return res.status(500).json({ success: false, message: "Face processing script missing." });
         }
@@ -75,41 +66,29 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
 
         exec(`"${pythonPath}" "${addFacesScript}" "${voter_id}"`, (error, stdout, stderr) => {
             console.log("📝 Python STDOUT:", stdout.trim());
-            console.error("⚠️ Python STDERR:", stderr.trim()); // Log errors
-        
+            console.error("⚠️ Python STDERR:", stderr.trim());
             if (error || stderr.includes("ERROR")) {
                 return res.status(500).json({ success: false, message: "Face processing failed", error: stderr.trim() });
             }
-        
             res.status(201).json({ success: true, message: "Voter added successfully" });
         });
-        
-        
     } catch (error) {
         console.error("Error:", error.message);
         res.status(400).json({ success: false, message: error.message });
     }
 });
 
-
 // Voter Login with Face Recognition
 router.post("/login", async (req, res) => {
     let { voter_id } = req.body;
-
     if (!voter_id) {
         return res.status(400).json({ success: false, message: "Voter ID is required" });
     }
-
     voter_id = String(voter_id).trim();
-
     try {
         const user = await User.findOne({ voter_id });
-        if (!user) {
-            return res.status(401).json({ success: false, message: "Invalid Voter ID" });
-        }
-
-        if (!user.image_filename) {
-            return res.status(400).json({ success: false, message: "No image found for this voter ID." });
+        if (!user || !user.image_filename) {
+            return res.status(401).json({ success: false, message: "Invalid Voter ID or no image found" });
         }
 
         const imagePath = path.join(uploadDir, user.image_filename);
@@ -117,88 +96,37 @@ router.post("/login", async (req, res) => {
             return res.status(400).json({ success: false, message: "Voter image file is missing from the server." });
         }
 
-        // **⬇️ Fix: Select Python Path Based on Environment**
-        const pythonPath = process.env.RAILWAY_ENV ? "python3" : path.join(__dirname, "../.venv/Scripts/python.exe");
         const recognizeFacesScript = path.join(__dirname, "../FaceRecognition/recognize_faces.py");
-
         if (!fs.existsSync(recognizeFacesScript)) {
             return res.status(500).json({ success: false, message: "Face recognition script is missing." });
         }
 
         console.log(`🔍 Running Face Recognition for Voter ID: ${voter_id}`);
-
         exec(`"${pythonPath}" "${recognizeFacesScript}" "${voter_id}" "${imagePath}"`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`❌ Error Running Python Script: ${stderr}`);
                 return res.status(500).json({ success: false, message: "Face processing failed", error: stderr.trim() });
             }
-
             console.log(`✅ Python Output: ${stdout.trim()}`);
-
-            if (stdout.includes(`MATCH: ${voter_id}`)) {
-                return res.json({ success: true, message: "Face matched, voter verified!" });
-            } else {
-                return res.status(401).json({ success: false, message: "Face does not match" });
-            }
+            stdout.includes(`MATCH: ${voter_id}`) ? res.json({ success: true, message: "Face matched, voter verified!" }) : res.status(401).json({ success: false, message: "Face does not match" });
         });
-
     } catch (error) {
         console.error("❌ Server error:", error);
         res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 });
 
-
 // Delete Voter
 router.delete("/delete/:id", async (req, res) => {
     try {
         const deletedUser = await User.findByIdAndDelete(req.params.id);
         if (!deletedUser) return res.status(404).json({ success: false, message: "Voter not found" });
-
         const imagePath = path.join(uploadDir, deletedUser.image_filename);
         if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
-
         res.json({ success: true, message: "Voter deleted" });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
 });
-
-// Update Voter
-router.put("/update/:id", upload.single("image"), async (req, res) => {
-    try {
-        const { voter_id } = req.body;
-
-        if (voter_id && voter_id.length !== 12) {
-            return res.status(400).json({ success: false, message: "Voter ID must be exactly 12 characters long" });
-        }
-
-        const user = await User.findById(req.params.id);
-        if (!user) return res.status(404).json({ success: false, message: "Voter not found" });
-
-        let updatedFields = { voter_id: voter_id || user.voter_id };
-
-        if (req.file) {
-            const newImageFilename = req.file.filename;
-            const newImagePath = path.join(uploadDir, newImageFilename);
-
-            if (user.image_filename) {
-                const oldImagePath = path.join(uploadDir, user.image_filename);
-                if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
-            }
-
-            updatedFields.image_filename = newImageFilename;
-        }
-
-        const updatedUser = await User.findByIdAndUpdate(req.params.id, updatedFields, { new: true });
-
-        res.json({ success: true, message: "Voter updated successfully", user: updatedUser });
-
-    } catch (error) {
-        console.error("Error:", error.message);
-        res.status(500).json({ success: false, message: "Internal Server Error" });
-    }
-});
-
 
 module.exports = router;
