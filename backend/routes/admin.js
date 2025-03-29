@@ -5,11 +5,15 @@ const path = require("path");
 const fs = require("fs");
 const { exec } = require("child_process");
 const { updateGoogleSheets } = require("../utils/updateGoogleSheets");
+const os = require("os");
 
 const router = express.Router();
 
-// Determine Python executable dynamicallyconst
- pythonPath = path.join(__dirname, "../.venv/Scripts/python.exe");
+// Determine Python executable dynamically
+const pythonPath = os.platform() === "win32" 
+    ? path.join(__dirname, "../.venv/Scripts/python.exe") // Windows
+    : path.join(__dirname, "../.venv/bin/python3"); // Linux (Railway)
+
 console.log("Using Python Path:", pythonPath);
 
 // Ensure `uploads` directory exists
@@ -64,7 +68,7 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
 
         console.log(`Executing Python script: ${addFacesScript} with Voter ID: ${voter_id}`);
 
-        exec(`"${pythonPath}" "${addFacesScript}" "${voter_id}"`, (error, stdout, stderr) =>{
+        exec(`"${pythonPath}" "${addFacesScript}" "${voter_id}"`, (error, stdout, stderr) => {
             console.log("📝 Python STDOUT:", stdout.trim());
             console.error("⚠️ Python STDERR:", stderr.trim());
             if (error || stderr.includes("ERROR")) {
