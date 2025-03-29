@@ -8,8 +8,9 @@ const { updateGoogleSheets } = require("../utils/updateGoogleSheets");
 
 const router = express.Router();
 
-// Correct Python Path
-const pythonPath = path.join(__dirname, "../.venv/Scripts/python.exe");
+// Correct Python Path (supports both Unix and Windows)
+const isWindows = process.platform === "win32";
+const pythonPath = isWindows ? path.join(__dirname, "../.venv/Scripts/python.exe") : path.join(__dirname, "../.venv/bin/python");
 
 // Ensure `uploads` directory exists
 const uploadDir = path.join(__dirname, "../uploads");
@@ -68,6 +69,10 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
                 console.error(`stderr: ${stderr}`);
                 return res.status(500).json({ success: false, message: "Face processing failed" });
             }
+
+            // Update Google Sheets after successful addition
+            updateGoogleSheets("add", newUser);
+
             res.status(201).json({ success: true, message: "Voter added successfully", user: newUser });
         });
         
@@ -115,6 +120,9 @@ router.delete("/delete/:id", async (req, res) => {
         const imagePath = path.join(uploadDir, deletedUser.image_filename);
         if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
 
+        // Update Google Sheets after successful deletion
+        updateGoogleSheets("delete", deletedUser);
+
         res.json({ success: true, message: "Voter deleted" });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -146,6 +154,10 @@ router.put("/update/:id", upload.single("image"), async (req, res) => {
         }
 
         const updatedUser = await User.findByIdAndUpdate(req.params.id, updatedFields, { new: true });
+
+        // Update Google Sheets after successful update
+        updateGoogleSheets("update", updatedUser);
+
         res.json({ success: true, message: "Voter updated successfully", user: updatedUser });
     } catch (error) {
         res.status(500).json({ success: false, message: "Internal Server Error" });
