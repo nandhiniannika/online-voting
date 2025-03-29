@@ -1,20 +1,20 @@
-﻿# Use official Node.js image
+﻿# Use Node.js base image
 FROM node:18-bullseye
 
-# Set the working directory
+# Set the working directory to /app (NOT /app/backend)
 WORKDIR /app
 
-# Copy package files first
+# Copy only package.json and package-lock.json first (for caching)
 COPY package.json package-lock.json ./
 
 # Install dependencies
-RUN npm ci --legacy-peer-deps
+RUN npm install --legacy-peer-deps
 
-# Copy the rest of the app
+# Copy the entire backend folder contents into /app
 COPY . .
 
-# Expose port (change if needed)
+# Expose the port your server runs on (change if needed)
 EXPOSE 5000
 
-# Start the application
-CMD ["npm", "start"]
+# Start the app
+CMD ["node", "index.js"]
