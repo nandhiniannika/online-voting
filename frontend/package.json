@@ -1,4 +1,5 @@
 {
+  "homepage": ".",
   "name": "online_voting",
   "version": "0.1.0",
   "private": true,
