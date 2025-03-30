@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-  "prestart": "python -m ensurepip --default-pip && pip install -r backend/requirements.txt",
-  "start": "node backend/index.js"
+    "prestart": "python -m ensurepip --default-pip && pip install -r backend/requirements.txt",
+    "start": "node backend/index.js"
   },
   "author": "\"4-tunate\"",
   "license": "ISC",
