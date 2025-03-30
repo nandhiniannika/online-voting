@@ -19,12 +19,12 @@ const voterRoutes = require("./routes/voter");
 const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/voter_management_2";
-const FRONTEND_URL = process.env.FRONTEND_URL || "https://online-voting-2-e9w0yq606-annikalla-nandhinis-projects.vercel.app";
+const FRONTEND_URL = process.env.FRONTEND_URL || "https://online-voting-2-m10ufyrxy-annikalla-nandhinis-projects.vercel.app";
 
 // ✅ Use CORS Middleware
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://online-voting-2-f9snl6wr2-annikalla-nandhinis-projects.vercel.app"
+  "https://online-voting-2-m10ufyrxy-annikalla-nandhinis-projects.vercel.app"
 ];
 
 app.use(cors({
