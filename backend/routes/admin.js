@@ -134,7 +134,7 @@ router.delete("/delete/:id", async (req, res) => {
         console.log("✅ Voter Deleted:", deletedUser.voter_id);
         res.json({ success: true, message: "✅ Voter Deleted Successfully!" });
     } catch (error) {
-        console.error("❌ Error Deleting Voter:", error);
+        console.error("❌ Error In Deleting :", error);
         res.status(500).json({ success: false, message: "⚠️ Internal Server Error." });
     }
 });
