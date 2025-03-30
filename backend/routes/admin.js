@@ -4,16 +4,14 @@ const User = require("../models/User");
 const path = require("path");
 const fs = require("fs");
 const { exec } = require("child_process");
-const { updateGoogleSheets } = require("../utils/updateGoogleSheets");
 
 const router = express.Router();
 const pythonPath = process.env.PYTHON_PATH || "python3"; 
-console.log("Using Python Path:", pythonPath);
-
 const uploadDir = path.join(__dirname, "../uploads");
+
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 
-// Configure multer for image upload
+// ✅ Multer Setup (Image Upload)
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, uploadDir),
     filename: (req, file, cb) => cb(null, `${Date.now()}${path.extname(file.originalname)}`),
@@ -27,7 +25,55 @@ const upload = multer({
     },
 });
 
-// 🟢 Get all registered voters
+// ✅ Admin & Voter Login
+router.post("/login", async (req, res) => {
+    const { voter_id, image } = req.body;
+
+    // ✅ If Admin Logs In (No Face Authentication)
+    if (voter_id === "8143796138") {
+        return res.json({ success: true, message: "✅ Admin Login Successful", role: "admin" });
+    }
+
+    // ✅ Voter Login (Requires Face Authentication)
+    if (!voter_id || !image) {
+        return res.status(400).json({ success: false, message: "⚠️ Voter ID and image are required." });
+    }
+
+    try {
+        const user = await User.findOne({ voter_id });
+        if (!user) return res.status(401).json({ success: false, message: "❌ Invalid Voter ID." });
+
+        // ✅ Save Temp Image for Face Recognition
+        const tempImagePath = path.join(uploadDir, `temp_${Date.now()}.png`);
+        const base64Data = image.replace(/^data:image\/png;base64,/, "");
+        fs.writeFileSync(tempImagePath, base64Data, "base64");
+
+        // ✅ Run Face Recognition Script
+        const recognizeFacesScript = path.resolve(__dirname, "../FaceRecognition/recognize_faces.py");
+        if (!fs.existsSync(recognizeFacesScript)) {
+            fs.unlinkSync(tempImagePath);
+            return res.status(500).json({ success: false, message: "⚠️ Face recognition script is missing." });
+        }
+
+        console.log(`Executing: ${pythonPath} "${recognizeFacesScript}" "${voter_id}" "${tempImagePath}"`);
+        exec(`${pythonPath} "${recognizeFacesScript}" "${voter_id}" "${tempImagePath}"`, (error, stdout, stderr) => {
+            fs.unlinkSync(tempImagePath); // ✅ Cleanup temp image file
+
+            if (stdout.includes(`MATCH: ${voter_id}`)) {
+                console.log("✅ Face Matched:", voter_id);
+                return res.json({ success: true, message: "✅ Face Matched, Voter Verified!", role: "voter" });
+            }
+
+            console.warn("❌ Face Mismatch:", voter_id);
+            return res.status(401).json({ success: false, message: "❌ Face does not match." });
+        });
+    } catch (error) {
+        console.error("❌ Login Error:", error);
+        res.status(500).json({ success: false, message: "⚠️ Internal Server Error." });
+    }
+});
+
+// ✅ Get All Registered Voters
 router.get("/", async (req, res) => {
     try {
         const users = await User.find();
@@ -38,82 +84,45 @@ router.get("/", async (req, res) => {
     }
 });
 
-// 🟢 Add a new voter
+// ✅ Add New Voter
 router.post("/addvoter", upload.single("image"), async (req, res) => {
     try {
         const { voter_id } = req.body;
         if (!voter_id || voter_id.length !== 12) {
-            return res.status(400).json({ success: false, message: "Voter ID must be exactly 12 characters long" });
+            return res.status(400).json({ success: false, message: "⚠️ Voter ID must be exactly 12 characters long." });
         }
 
         const image_filename = req.file?.filename;
         if (!image_filename) {
-            return res.status(400).json({ success: false, message: "Image file is required" });
+            return res.status(400).json({ success: false, message: "⚠️ Image file is required." });
         }
 
         const newUser = new User({ voter_id, image_filename });
         await newUser.save();
 
+        // ✅ Add Face to Database
         const addFacesScript = path.resolve(__dirname, "../FaceRecognition/add_faces.py");
         if (!fs.existsSync(addFacesScript)) {
-            return res.status(500).json({ success: false, message: "Face processing script is missing." });
+            return res.status(500).json({ success: false, message: "⚠️ Face processing script is missing." });
         }
 
-        console.log(`Executing: ${pythonPath} ${addFacesScript} ${voter_id}`);
+        console.log(`Executing: ${pythonPath} "${addFacesScript}" "${voter_id}"`);
         exec(`${pythonPath} "${addFacesScript}" "${voter_id}"`, (error, stdout, stderr) => {
             if (error) {
                 console.error("❌ Face processing error:", error.message);
                 console.error("stderr:", stderr);
-                return res.status(500).json({ success: false, message: "Face processing failed." });
+                return res.status(500).json({ success: false, message: "⚠️ Face processing failed." });
             }
-            console.log("✅ Face processing success:", stdout);
-            return res.status(201).json({ success: true, message: "Voter added successfully!" });
+            console.log("✅ Face Processing Success:", stdout);
+            return res.status(201).json({ success: true, message: "✅ Voter Added Successfully!" });
         });
     } catch (error) {
-        console.error("Error adding voter:", error);
-        res.status(500).json({ success: false, message: "Internal server error." });
+        console.error("❌ Error Adding Voter:", error);
+        res.status(500).json({ success: false, message: "⚠️ Internal Server Error." });
     }
 });
 
-// 🟢 Login (Face Recognition)
-router.post("/login", async (req, res) => {
-    const { voter_id, image } = req.body;
-    if (!voter_id || !image) {
-        return res.status(400).json({ success: false, message: "Voter ID and image are required." });
-    }
-
-    try {
-        const user = await User.findOne({ voter_id });
-        if (!user) return res.status(401).json({ success: false, message: "❌ Invalid Voter ID." });
-
-        const tempImagePath = path.join(uploadDir, `temp_${Date.now()}.png`);
-        const base64Data = image.replace(/^data:image\/png;base64,/, "");
-        fs.writeFileSync(tempImagePath, base64Data, "base64");
-
-        const recognizeFacesScript = path.resolve(__dirname, "../FaceRecognition/recognize_faces.py");
-        if (!fs.existsSync(recognizeFacesScript)) {
-            return res.status(500).json({ success: false, message: "Face recognition script is missing." });
-        }
-
-        console.log(`Executing: ${pythonPath} "${recognizeFacesScript}" "${voter_id}" "${tempImagePath}"`);
-        exec(`${pythonPath} "${recognizeFacesScript}" "${voter_id}" "${tempImagePath}"`, (error, stdout, stderr) => {
-            fs.unlinkSync(tempImagePath); // Cleanup temporary image file
-
-            if (stdout.includes(`MATCH: ${voter_id}`)) {
-                console.log("✅ Face matched:", voter_id);
-                return res.json({ success: true, message: "Face matched, voter verified!" });
-            }
-
-            console.warn("❌ Face mismatch:", voter_id);
-            return res.status(401).json({ success: false, message: "Face does not match." });
-        });
-    } catch (error) {
-        console.error("Login error:", error);
-        res.status(500).json({ success: false, message: "Internal Server Error." });
-    }
-});
-
-// 🟢 Delete voter
+// ✅ Delete Voter
 router.delete("/delete/:id", async (req, res) => {
     try {
         const deletedUser = await User.findByIdAndDelete(req.params.id);
@@ -122,12 +131,11 @@ router.delete("/delete/:id", async (req, res) => {
         const imagePath = path.join(uploadDir, deletedUser.image_filename);
         if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
 
-        updateGoogleSheets("delete", deletedUser);
-        console.log("✅ Voter deleted:", deletedUser.voter_id);
-        res.json({ success: true, message: "Voter deleted successfully!" });
+        console.log("✅ Voter Deleted:", deletedUser.voter_id);
+        res.json({ success: true, message: "✅ Voter Deleted Successfully!" });
     } catch (error) {
-        console.error("Error deleting voter:", error);
-        res.status(500).json({ success: false, message: "Internal Server Error." });
+        console.error("❌ Error Deleting Voter:", error);
+        res.status(500).json({ success: false, message: "⚠️ Internal Server Error." });
     }
 });
 
