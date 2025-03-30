@@ -102,6 +102,7 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
 
         // ✅ Add Face to Database
         const addFacesScript = path.resolve(__dirname, "FaceRecognition/add_faces.py");
+        console.log("Resolved Path:", addFacesScript);
         if (!fs.existsSync(addFacesScript)) {
             return res.status(500).json({ success: false, message: "⚠️ Face processing script is missing." });
         }
