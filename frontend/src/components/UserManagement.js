@@ -3,7 +3,7 @@ import axios from 'axios';
 import './UserManagement.css';
 
 
-const API_URL = process.env.REACT_APP_API_URL || "https://online-voting-production.up.railway.app"; 
+const API_URL = process.env.REACT_APP_API_URL || "https://online-voting-production-8600.up.railway.app"; 
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);

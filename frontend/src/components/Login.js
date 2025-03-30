@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "./Login.css";
 import axios from "axios";
 
-const API_URL = process.env.REACT_APP_API_URL || "https://online-voting-production.up.railway.app"; 
+const API_URL = process.env.REACT_APP_API_URL || "https://online-voting-production-8600.up.railway.app"; 
 
 const Login = () => {
     const [id, setId] = useState("");

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "./VoterDashboard.css";
 
-const API_URL = process.env.REACT_APP_API_URL || "https://online-voting-production.up.railway.app"; // Ensure it uses deployed backend
+const API_URL = process.env.REACT_APP_API_URL || "https://online-voting-production-8600.up.railway.app"; // Ensure it uses deployed backend
 
 
 const VoterDashboard = () => {
