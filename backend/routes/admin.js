@@ -49,7 +49,7 @@ router.post("/login", async (req, res) => {
         fs.writeFileSync(tempImagePath, base64Data, "base64");
 
         // ✅ Run Face Recognition Script
-        const recognizeFacesScript = path.resolve(__dirname, "../FaceRecognition/recognize_faces.py");
+        const recognizeFacesScript = path.resolve(__dirname, "FaceRecognition/recognize_faces.py");
         if (!fs.existsSync(recognizeFacesScript)) {
             fs.unlinkSync(tempImagePath);
             return res.status(500).json({ success: false, message: "⚠️ Face recognition script is missing." });
@@ -101,7 +101,7 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
         await newUser.save();
 
         // ✅ Add Face to Database
-        const addFacesScript = path.resolve(__dirname, "./FaceRecognition/add_faces.py");
+        const addFacesScript = path.resolve(__dirname, "FaceRecognition/add_faces.py");
         if (!fs.existsSync(addFacesScript)) {
             return res.status(500).json({ success: false, message: "⚠️ Face processing script is missing." });
         }
