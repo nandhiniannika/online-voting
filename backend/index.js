@@ -19,40 +19,29 @@ const voterRoutes = require("./routes/voter");
 const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/voter_management_2";
-const FRONTEND_URL = process.env.FRONTEND_URL || "https://online-voting-2.vercel.app";
 
-// ✅ Allowed Origins
+// ✅ Allowed Frontend URLs
 const allowedOrigins = [
   "http://localhost:3000",
   "https://online-voting-2.vercel.app"
 ];
 
-// ✅ Debug Incoming Requests
+// ✅ CORS Middleware (Fixes Issue)
 app.use((req, res, next) => {
-  console.log("🌍 Incoming Request Origin:", req.headers.origin);
-  next();
-});
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Vary", "Origin");
+  }
 
-// ✅ CORS Middleware
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.error("🚨 CORS Blocked:", origin);
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true, // Allows cookies & auth headers
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
+  // Handle preflight requests
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
 
-// ✅ Ensure CORS headers are included in every response
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", FRONTEND_URL);
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
   next();
 });
 
@@ -71,22 +60,22 @@ app.use((req, res, next) => {
 
 // ✅ Check if Python is Installed
 app.get("/check-python", (req, res) => {
-  exec("python --version", (error, stdout, stderr) => {
-    if (error) {
-      return res.json({ success: false, message: stderr || error.message });
-    }
-    res.json({ success: true, pythonVersion: stdout.trim() });
-  });
+    exec("python --version", (error, stdout, stderr) => {
+        if (error) {
+            return res.json({ success: false, message: stderr || error.message });
+        }
+        res.json({ success: true, pythonVersion: stdout.trim() });
+    });
 });
 
 // ✅ Run Python Script (`add_faces.py`)
 app.post("/run-python", (req, res) => {
-  exec("python3 /app/backend/FaceRecognition/add_faces.py", (error, stdout, stderr) => {
-    if (error) {
-      return res.json({ success: false, message: stderr || error.message });
-    }
-    res.json({ success: true, output: stdout.trim() });
-  });
+    exec("python3 /app/backend/FaceRecognition/add_faces.py", (error, stdout, stderr) => {
+        if (error) {
+            return res.json({ success: false, message: stderr || error.message });
+        }
+        res.json({ success: true, output: stdout.trim() });
+    });
 });
 
 // ✅ MongoDB Connection
