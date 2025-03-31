@@ -6,7 +6,7 @@ const fs = require("fs");
 const { exec } = require("child_process");
 
 const router = express.Router();
-const pythonPath = process.env.PYTHON_PATH || "python3"; 
+const pythonPath = "C:\\Users\\nandh\\AppData\\Local\\Programs\\Python\\Python39\\python.exe"; // Use your actual Python ; 
 const uploadDir = path.join(__dirname, "../uploads");
 
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);

@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
-import './UserManagement.css';
+import React, { useState, useEffect, useRef } from "react";
+import axios from "axios";
+import "./UserManagement.css";
 
 const API_URL = process.env.REACT_APP_API_URL || "https://online-voting-production-8600.up.railway.app";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
-  const [voterId, setVoterId] = useState('');
-  const [message, setMessage] = useState('');
+  const [voterId, setVoterId] = useState("");
+  const [message, setMessage] = useState("");
   const [isCapturing, setIsCapturing] = useState(false);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -21,8 +21,8 @@ const UserManagement = () => {
       const response = await axios.get(`${API_URL}/api/users`);
       setUsers(response.data);
     } catch (error) {
-      console.error('Error fetching users:', error);
-      setMessage('Error fetching users.');
+      console.error("Error fetching users:", error);
+      setMessage("Error fetching users.");
     }
   };
 
@@ -34,15 +34,25 @@ const UserManagement = () => {
         videoRef.current.srcObject = stream;
       }
     } catch (error) {
-      console.error('Error accessing camera:', error);
-      setMessage('Error accessing camera.');
+      console.error("Error accessing camera:", error);
+      setMessage("Error accessing camera.");
+    }
+  };
+
+  const stopCamera = () => {
+    setIsCapturing(false);
+    if (videoRef.current && videoRef.current.srcObject) {
+      let stream = videoRef.current.srcObject;
+      let tracks = stream.getTracks();
+      tracks.forEach((track) => track.stop());
+      videoRef.current.srcObject = null;
     }
   };
 
   const captureAndAddUser = async (e) => {
     e.preventDefault();
     if (!voterId) {
-      setMessage('Please enter a Voter ID before adding.');
+      setMessage("Please enter a Voter ID before adding.");
       return;
     }
 
@@ -51,42 +61,35 @@ const UserManagement = () => {
     setTimeout(() => {
       const canvas = canvasRef.current;
       const video = videoRef.current;
-      const context = canvas.getContext('2d');
+      const context = canvas.getContext("2d");
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
       canvas.toBlob(async (blob) => {
+        if (!blob) {
+          setMessage("Failed to capture image.");
+          return;
+        }
+
         const formData = new FormData();
-        formData.append('voter_id', voterId);
-        formData.append('image', blob, `${voterId}.jpg`);
+        formData.append("voter_id", voterId);
+        formData.append("image", blob, `${voterId}.jpg`);
 
         try {
-          const response = await axios.post(`${API_URL}/api/users/addvoter`, formData);
-          if (response.data.success) {
-            setMessage('User added successfully! Running face recognition...');
-            await axios.post(`${API_URL}/api/users/add_faces`, { voter_id: voterId });
-            setMessage('Face added successfully!');
-            fetchUsers();
-            setVoterId('');
-            stopCamera();
-          } else {
-            setMessage('Face not detected, try again.');
-          }
-        } catch (error) {
-          console.error('Error adding user:', error);
-          setMessage('Error adding user.');
-        }
-      }, 'image/jpeg');
-    }, 3000);
-  };
+          await axios.post(`${API_URL}/api/users/addvoter`, formData);
+          setMessage("User added successfully!");
 
-  const stopCamera = () => {
-    setIsCapturing(false);
-    if (videoRef.current && videoRef.current.srcObject) {
-      let stream = videoRef.current.srcObject;
-      let tracks = stream.getTracks();
-      tracks.forEach(track => track.stop());
-      videoRef.current.srcObject = null;
-    }
+          // 🔥 Trigger Face Recognition after adding voter
+          await axios.post(`${API_URL}/api/users/add_faces`, { voter_id: voterId });
+
+          fetchUsers();
+          setVoterId("");
+          stopCamera();
+        } catch (error) {
+          console.error("Error adding user:", error);
+          setMessage("Error adding user.");
+        }
+      }, "image/jpeg");
+    }, 10000); // Captures after 10 seconds
   };
 
   const handleDeleteUser = async (id) => {
@@ -107,15 +110,23 @@ const UserManagement = () => {
 
       <form onSubmit={captureAndAddUser}>
         <div className="form-group">
-          <input type="text" placeholder="Enter Voter ID" value={voterId} onChange={(e) => setVoterId(e.target.value)} required />
+          <input
+            type="text"
+            placeholder="Enter Voter ID"
+            value={voterId}
+            onChange={(e) => setVoterId(e.target.value)}
+            required
+          />
         </div>
-        <button type="submit" className="add-user-button">Add User</button>
+        <button type="submit" className="add-user-button">
+          Add User
+        </button>
       </form>
 
       {isCapturing && (
         <>
           <video ref={videoRef} autoPlay className="video-preview" />
-          <canvas ref={canvasRef} style={{ display: 'none' }} width="640" height="480"></canvas>
+          <canvas ref={canvasRef} style={{ display: "none" }} width="640" height="480"></canvas>
         </>
       )}
 
@@ -123,9 +134,11 @@ const UserManagement = () => {
       <div className="user-list">
         {users.map((user) => (
           <div key={user._id} className="user-card">
-            <img src={`${API_URL}/uploads/${user.image_filename || 'default.jpg'}`} alt="User" className="user-image" />
+            <img src={`${API_URL}/uploads/${user.image_filename || "default.jpg"}`} alt="User" className="user-image" />
             <h4>{user.voter_id}</h4>
-            <button className="delete-button" onClick={() => handleDeleteUser(user._id)}>Delete</button>
+            <button className="delete-button" onClick={() => handleDeleteUser(user._id)}>
+              Delete
+            </button>
           </div>
         ))}
       </div>
