@@ -46,7 +46,7 @@ const UserManagement = () => {
       return;
     }
 
-    startCamera();
+    await startCamera();
 
     setTimeout(() => {
       const canvas = canvasRef.current;
@@ -60,17 +60,23 @@ const UserManagement = () => {
         formData.append('image', blob, `${voterId}.jpg`);
 
         try {
-          await axios.post(`${API_URL}/api/users/addvoter`, formData);
-          setMessage('User added successfully!');
-          fetchUsers();
-          setVoterId('');
-          stopCamera();
+          const response = await axios.post(`${API_URL}/api/users/addvoter`, formData);
+          if (response.data.success) {
+            setMessage('User added successfully! Running face recognition...');
+            await axios.post(`${API_URL}/api/users/add_faces`, { voter_id: voterId });
+            setMessage('Face added successfully!');
+            fetchUsers();
+            setVoterId('');
+            stopCamera();
+          } else {
+            setMessage('Face not detected, try again.');
+          }
         } catch (error) {
           console.error('Error adding user:', error);
           setMessage('Error adding user.');
         }
       }, 'image/jpeg');
-    }, 3000); // Delay to allow camera to start before capturing
+    }, 3000);
   };
 
   const stopCamera = () => {
@@ -80,6 +86,17 @@ const UserManagement = () => {
       let tracks = stream.getTracks();
       tracks.forEach(track => track.stop());
       videoRef.current.srcObject = null;
+    }
+  };
+
+  const handleDeleteUser = async (id) => {
+    try {
+      await axios.delete(`${API_URL}/api/users/delete/${id}`);
+      setMessage("User deleted successfully!");
+      fetchUsers();
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      setMessage("Error deleting user.");
     }
   };
 
