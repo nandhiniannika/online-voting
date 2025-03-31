@@ -26,7 +26,6 @@ const UserManagement = () => {
     }
   };
 
-  // ✅ Start Camera
   const startCamera = async () => {
     setIsCapturing(true);
     try {
@@ -40,7 +39,6 @@ const UserManagement = () => {
     }
   };
 
-  // ✅ Capture Image & Send to Backend
   const captureImage = async () => {
     if (!voterId) {
       setMessage("Please enter a Voter ID before capturing.");
@@ -53,7 +51,6 @@ const UserManagement = () => {
 
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     
-    // Convert canvas to Blob
     canvas.toBlob(async (blob) => {
       const formData = new FormData();
       formData.append("voter_id", voterId);
@@ -72,7 +69,6 @@ const UserManagement = () => {
     }, "image/jpeg");
   };
 
-  // ✅ Stop Camera
   const stopCamera = () => {
     setIsCapturing(false);
     if (videoRef.current && videoRef.current.srcObject) {
@@ -80,6 +76,17 @@ const UserManagement = () => {
       let tracks = stream.getTracks();
       tracks.forEach(track => track.stop());
       videoRef.current.srcObject = null;
+    }
+  };
+
+  const handleDeleteUser = async (id) => {
+    try {
+      await axios.delete(`${API_URL}/api/users/${id}`);
+      setMessage("User deleted successfully!");
+      fetchUsers();
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      setMessage("Error deleting user.");
     }
   };
 
