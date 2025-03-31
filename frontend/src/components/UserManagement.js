@@ -1,18 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import './UserManagement.css';
+import React, { useState, useEffect, useRef } from "react";
+import axios from "axios";
+import "./UserManagement.css";
 
-
-const API_URL = process.env.REACT_APP_API_URL || "https://online-voting-production-8600.up.railway.app"; 
+const API_URL = process.env.REACT_APP_API_URL || "https://online-voting-production-8600.up.railway.app";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
-  const [voterId, setVoterId] = useState('');
-  const [image, setImage] = useState(null);
-  const [message, setMessage] = useState('');
-  const [editUser_Id, setEditUser_Id] = useState(null);
-  const [editVoterId, setEditVoterId] = useState('');
-  const [editImage, setEditImage] = useState(null);
+  const [voterId, setVoterId] = useState("");
+  const [message, setMessage] = useState("");
+  const [isCapturing, setIsCapturing] = useState(false);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
 
   useEffect(() => {
     fetchUsers();
@@ -23,71 +21,65 @@ const UserManagement = () => {
       const response = await axios.get(`${API_URL}/api/users`);
       setUsers(response.data);
     } catch (error) {
-      console.error('Error fetching users:', error);
-      setMessage('Error fetching users.');
+      console.error("Error fetching users:", error);
+      setMessage("Error fetching users.");
     }
   };
 
-  const handleAddUser = async (e) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append('voter_id', voterId);
-    if (image) formData.append('image', image);
-
+  // ✅ Start Camera
+  const startCamera = async () => {
+    setIsCapturing(true);
     try {
-      await axios.post(`${API_URL}/api/users/addvoter`, formData);
-      setMessage('User added successfully!');
-      fetchUsers();
-      setVoterId('');
-      setImage(null);
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
     } catch (error) {
-      console.error('Error adding user:', error);
-      setMessage('Error adding user.');
+      console.error("Error accessing camera:", error);
+      setMessage("Error accessing camera.");
     }
   };
 
-  const handleDeleteUser = async (id) => {
-    try {
-      await axios.delete(`${API_URL}/api/users/delete/${id}`);
-      setMessage('User deleted successfully!');
-      fetchUsers();
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      setMessage('Error deleting user.');
-    }
-  };
-
-  const handleEditClick = (user) => {
-    setEditUser_Id(user._id);
-    setEditVoterId(user.voter_id);
-    setEditImage(null);
-  };
-
-  const handleCancelEdit = () => {
-    setEditUser_Id(null);
-    setEditVoterId('');
-    setEditImage(null);
-  };
-
-  const handleUpdateUser = async (e) => {
-    e.preventDefault();
-    if (!editUser_Id) {
-      setMessage('No user selected to update.');
+  // ✅ Capture Image & Send to Backend
+  const captureImage = async () => {
+    if (!voterId) {
+      setMessage("Please enter a Voter ID before capturing.");
       return;
     }
 
-    const formData = new FormData();
-    formData.append('voter_id', editVoterId);
-    if (editImage) formData.append('image', editImage);
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    const context = canvas.getContext("2d");
 
-    try {
-      await axios.put(`${API_URL}/api/users/update/${editUser_Id}`, formData);
-      setMessage('User updated successfully!');
-      fetchUsers();
-      handleCancelEdit();
-    } catch (error) {
-      console.error('Error updating user:', error);
-      setMessage('Error updating user.');
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Convert canvas to Blob
+    canvas.toBlob(async (blob) => {
+      const formData = new FormData();
+      formData.append("voter_id", voterId);
+      formData.append("image", blob, `${voterId}.jpg`);
+
+      try {
+        await axios.post(`${API_URL}/api/users/addvoter`, formData);
+        setMessage("User added successfully!");
+        fetchUsers();
+        setVoterId("");
+        stopCamera();
+      } catch (error) {
+        console.error("Error adding user:", error);
+        setMessage("Error adding user.");
+      }
+    }, "image/jpeg");
+  };
+
+  // ✅ Stop Camera
+  const stopCamera = () => {
+    setIsCapturing(false);
+    if (videoRef.current && videoRef.current.srcObject) {
+      let stream = videoRef.current.srcObject;
+      let tracks = stream.getTracks();
+      tracks.forEach(track => track.stop());
+      videoRef.current.srcObject = null;
     }
   };
 
@@ -96,47 +88,31 @@ const UserManagement = () => {
       <h2>User Management</h2>
       {message && <div className="message">{message}</div>}
 
-      <form onSubmit={handleAddUser}>
-        <div className="form-group">
-          <input type="text" placeholder="Enter Voter ID" value={voterId} onChange={(e) => setVoterId(e.target.value)} required />
-        </div>
-        <div className="form-group">
-          <input type="file" accept="image/*" onChange={(e) => setImage(e.target.files[0])} />
-        </div>
-        <button type="submit" className="add-user-button">Add User</button>
-      </form>
+      <div className="form-group">
+        <input type="text" placeholder="Enter Voter ID" value={voterId} onChange={(e) => setVoterId(e.target.value)} required />
+      </div>
+
+      {isCapturing ? (
+        <>
+          <video ref={videoRef} autoPlay className="video-preview" />
+          <canvas ref={canvasRef} style={{ display: "none" }} width="640" height="480"></canvas>
+          <button onClick={captureImage} className="capture-button">Capture & Submit</button>
+          <button onClick={stopCamera} className="stop-button">Stop Camera</button>
+        </>
+      ) : (
+        <button onClick={startCamera} className="start-camera-button">Start Camera</button>
+      )}
 
       <h3>User List</h3>
       <div className="user-list">
         {users.map((user) => (
           <div key={user._id} className="user-card">
-            <img src={`${API_URL}/uploads/${user.image_filename || 'default.jpg'}`} alt="User" className="user-image" />
+            <img src={`${API_URL}/uploads/${user.image_filename || "default.jpg"}`} alt="User" className="user-image" />
             <h4>{user.voter_id}</h4>
             <button className="delete-button" onClick={() => handleDeleteUser(user._id)}>Delete</button>
-            <button className="update-button" onClick={() => handleEditClick(user)}>Update</button>
           </div>
         ))}
       </div>
-
-      {editUser_Id && (
-        <div className="update-form">
-          <h3>Update User</h3>
-          <form onSubmit={handleUpdateUser}>
-            <div className="form-group">
-              <label>Voter ID:</label>
-              <input type="text" value={editVoterId} onChange={(e) => setEditVoterId(e.target.value)} required />
-            </div>
-            <div className="form-group">
-              <label>New Image (optional):</label>
-              <input type="file" accept="image/*" onChange={(e) => setEditImage(e.target.files[0])} />
-            </div>
-            <div className="button-container">
-              <button type="submit" className="save-button">Save</button>
-              <button type="button" className="cancel-button" onClick={handleCancelEdit}>Cancel</button>
-            </div>
-          </form>
-        </div>
-      )}
     </div>
   );
 };
