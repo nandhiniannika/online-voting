@@ -108,7 +108,7 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
         }
 
         console.log(`Executing: ${pythonPath} "${addFacesScript}" "${voter_id}"`);
-        exec(`${pythonPath} "${addFacesScript}" "${voter_id}"`, (error, stdout, stderr) => {
+        exec(`"${pythonPath}" "${addFacesScript}" "${voter_id}"`, (error, stdout, stderr) => {
             if (error) {
                 console.error("❌ Face processing error:", error.message);
                 console.error("stderr:", stderr);
@@ -117,6 +117,7 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
             console.log("✅ Face Processing Success:", stdout);
             return res.status(201).json({ success: true, message: "✅ Voter Added Successfully!" });
         });
+        
     } catch (error) {
         console.error("❌ Error Adding Voter:", error);
         res.status(500).json({ success: false, message: "⚠️ Internal Server Error." });
