@@ -67,6 +67,7 @@ const UserManagement = () => {
       canvas.toBlob(async (blob) => {
         if (!blob) {
           setMessage("Failed to capture image.");
+          stopCamera();
           return;
         }
 
@@ -79,17 +80,18 @@ const UserManagement = () => {
           setMessage("User added successfully!");
 
           // 🔥 Trigger Face Recognition after adding voter
-          await axios.post(`${API_URL}/api/users/add_faces`, { voter_id: voterId });
+          // await axios.post(`${API_URL}/api/users/trigger_face_recognition`, { voter_id: voterId });
 
           fetchUsers();
           setVoterId("");
-          stopCamera();
         } catch (error) {
           console.error("Error adding user:", error);
           setMessage("Error adding user.");
+        } finally {
+          stopCamera();
         }
       }, "image/jpeg");
-    }, 10000); // Captures after 10 seconds
+    }, 5000); // Captures after 5 seconds
   };
 
   const handleDeleteUser = async (id) => {
