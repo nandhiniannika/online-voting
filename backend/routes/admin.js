@@ -6,7 +6,7 @@ const fs = require("fs");
 const { exec } = require("child_process");
 
 const router = express.Router();
-const pythonPath = "C:\\Program Files\\Python311\\python.exe"; // Use your actual Python ; 
+const pythonPath = "C:\Users\nandh\OneDrive\Desktop\Online_Voting\online-voting\.venv\Scripts\python.exe"; // Use your actual Python ; 
 const uploadDir = path.join(__dirname, "../uploads");
 
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
