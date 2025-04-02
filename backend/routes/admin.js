@@ -55,7 +55,7 @@ router.post("/addvoter", upload.single("image"), async (req, res) => {
 });
 
 // ✅ Route to fetch all voters
-router.get("/users", async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const files = fs.readdirSync("uploads/");
     const users = files.map((file) => ({
