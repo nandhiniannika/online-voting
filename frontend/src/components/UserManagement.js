@@ -9,6 +9,7 @@ const UserManagement = () => {
   const [voterId, setVoterId] = useState("");
   const [message, setMessage] = useState("");
   const [isCapturing, setIsCapturing] = useState(false);
+  const [updateMode, setUpdateMode] = useState(false);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
@@ -49,10 +50,10 @@ const UserManagement = () => {
     }
   };
 
-  const captureAndAddUser = async (e) => {
+  const captureAndSubmitUser = async (e, isUpdate = false) => {
     e.preventDefault();
     if (!voterId) {
-      setMessage("Please enter a Voter ID before adding.");
+      setMessage("Please enter a Voter ID before proceeding.");
       return;
     }
 
@@ -76,22 +77,25 @@ const UserManagement = () => {
         formData.append("image", blob, `${voterId}.jpg`);
 
         try {
-          await axios.post(`${API_URL}/api/users/addvoter`, formData);
-          setMessage("User added successfully!");
-
-          // 🔥 Trigger Face Recognition after adding voter
-          // await axios.post(`${API_URL}/api/users/trigger_face_recognition`, { voter_id: voterId });
+          if (isUpdate) {
+            await axios.put(`${API_URL}/api/users/updatevoter`, formData);
+            setMessage("User image updated successfully!");
+          } else {
+            await axios.post(`${API_URL}/api/users/addvoter`, formData);
+            setMessage("User added successfully!");
+          }
 
           fetchUsers();
           setVoterId("");
+          setUpdateMode(false);
         } catch (error) {
-          console.error("Error adding user:", error);
-          setMessage("Error adding user.");
+          console.error("Error processing request:", error);
+          setMessage("Error processing request.");
         } finally {
           stopCamera();
         }
       }, "image/jpeg");
-    }, 5000); // Captures after 5 seconds
+    }, 5000); // Capture after 5 seconds
   };
 
   const handleDeleteUser = async (id) => {
@@ -110,7 +114,7 @@ const UserManagement = () => {
       <h2>User Management</h2>
       {message && <div className="message">{message}</div>}
 
-      <form onSubmit={captureAndAddUser}>
+      <form onSubmit={(e) => captureAndSubmitUser(e, updateMode)}>
         <div className="form-group">
           <input
             type="text"
@@ -121,7 +125,7 @@ const UserManagement = () => {
           />
         </div>
         <button type="submit" className="add-user-button">
-          Add User
+          {updateMode ? "Update User Image" : "Add User"}
         </button>
       </form>
 
@@ -135,11 +139,20 @@ const UserManagement = () => {
       <h3>User List</h3>
       <div className="user-list">
         {users.map((user) => (
-          <div key={user._id} className="user-card">
+          <div key={user.voter_id} className="user-card">
             <img src={`${API_URL}/uploads/${user.image_filename || "default.jpg"}`} alt="User" className="user-image" />
             <h4>{user.voter_id}</h4>
-            <button className="delete-button" onClick={() => handleDeleteUser(user._id)}>
+            <button className="delete-button" onClick={() => handleDeleteUser(user.voter_id)}>
               Delete
+            </button>
+            <button
+              className="update-button"
+              onClick={() => {
+                setVoterId(user.voter_id);
+                setUpdateMode(true);
+              }}
+            >
+              Update Image
             </button>
           </div>
         ))}
