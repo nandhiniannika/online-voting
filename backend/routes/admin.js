@@ -41,20 +41,31 @@ router.get("/", async (req, res) => {
 // ✅ Add Voter (Admin Functionality)
 router.post("/addvoter", async (req, res) => {
     try {
+        console.log("📥 Received a request to /addvoter");
         console.log("📥 Received Body:", req.body);
+
+        if (!req.body) {
+            console.error("❌ Empty request body received");
+            return res.status(400).json({ error: "Request body is missing!" });
+        }
 
         const { voter_id } = req.body;
         if (!voter_id) {
+            console.error("❌ Voter ID is missing in request body");
             return res.status(400).json({ error: "Voter ID is required", receivedBody: req.body });
         }
 
         console.log(`✅ Running Python script for Voter ID: ${voter_id}`);
-        
+
         exec(`"${pythonPath}" backend/FaceRecognition/add_faces.py "${voter_id}"`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`❌ Python Execution Error: ${error.message}`);
                 return res.status(500).json({ error: "Python script failed", details: error.message });
             }
+            if (stderr) {
+                console.error(`⚠️ Python Stderr: ${stderr}`);
+            }
+
             console.log("🐍 Python Output:", stdout);
             res.status(200).json({ success: true, output: stdout });
         });
@@ -64,6 +75,7 @@ router.post("/addvoter", async (req, res) => {
         res.status(500).json({ error: "Internal server error", details: error.message });
     }
 });
+
 
 // ✅ Voter Login with Face Recognition
 router.post("/login", async (req, res) => {
