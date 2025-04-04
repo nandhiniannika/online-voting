@@ -31,23 +31,20 @@ const UserManagement = () => {
     }
   };
 
-  const handleAddUser = async (e) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append('voter_id', voterId);
-    if (image) formData.append('image', image);
-
+  const handleAddUser = async () => {
     try {
-      await axios.post(`${API_BASE_URL}/users/addvoter`, formData);
-      setMessage('User added successfully!');
-      fetchUsers();
-      setVoterId('');
-      setImage(null);
+      const response = await axios.post(
+        `${API_BASE_URL}/users/addvoter`,
+        { voterId },
+        { headers: { "Content-Type": "application/json" } } // ✅ Ensure JSON format
+      );
+  
+      console.log("✅ User added:", response.data);
     } catch (error) {
-      console.error('Error adding user:', error);
-      setMessage('Error adding user.');
+      console.error("❌ Error adding user:", error.response?.data || error.message);
     }
   };
+  
 
   const handleDeleteUser = async (id) => {
     try {

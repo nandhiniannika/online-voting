@@ -42,44 +42,39 @@ router.get("/", async (req, res) => {
 // Add Voter (Admin Functionality)
 router.post("/addvoter", async (req, res) => {
     try {
-      console.log("Received request:", req.body);
+      console.log("📩 Received Headers:", req.headers);
+      console.log("📥 Received Body:", req.body);
   
-      // Extract voter_id from JSON or FormData
-      const voter_id = req.body.voter_id || req.query.voter_id;
-      if (!voter_id) {
-        return res.status(400).json({ error: "Voter ID is required" });
+      if (!req.body || Object.keys(req.body).length === 0) {
+        return res.status(400).json({
+          error: "Request body is empty! Ensure JSON is sent correctly.",
+          receivedBody: req.body,
+        });
       }
   
-      console.log(`Executing Python script: add_faces.py with Voter ID: ${voter_id}`);
+      const { voter_id } = req.body;
+      if (!voter_id) {
+        return res.status(400).json({ error: "Voter ID is required", receivedBody: req.body });
+      }
   
-      // Execute Python script
-      const pythonProcess = spawn("python3", ["backend/FaceRecognition/add_faces.py", voter_id]);
-  
-      let scriptOutput = "";
-  
-      pythonProcess.stdout.on("data", (data) => {
-        console.log(`Python Output: ${data.toString()}`);
-        scriptOutput += data.toString();
-      });
-  
-      pythonProcess.stderr.on("data", (data) => {
-        console.error(`Python Error: ${data.toString()}`);
-      });
-  
-      pythonProcess.on("close", (code) => {
-        console.log(`Python script exited with code ${code}`);
-        if (code === 0) {
-          res.status(200).json({ success: true, output: scriptOutput });
-        } else {
-          res.status(500).json({ error: "Python script execution failed", code });
+      console.log(`✅ Running Python script for Voter ID: ${voter_id}`);
+      
+      const { exec } = require("child_process");
+      exec(`python3 backend/FaceRecognition/add_faces.py ${voter_id}`, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`❌ Python Execution Error: ${error.message}`);
+          return res.status(500).json({ error: "Python script failed", details: error.message });
         }
+        console.log("🐍 Python Output:", stdout);
+        res.status(200).json({ success: true, output: stdout });
       });
   
     } catch (error) {
-      console.error("Error in addvoter API:", error);
+      console.error("❌ API Error:", error);
       res.status(500).json({ error: "Internal server error", details: error.message });
     }
   });
+  
 // Voter Login with Face Recognition
 router.post("/login", async (req, res) => {
     let { voter_id } = req.body;
