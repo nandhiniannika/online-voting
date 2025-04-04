@@ -3,13 +3,13 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const { exec } = require("child_process");
-const User = require("../models/User"); // Ensure User model is correctly imported
-const { updateGoogleSheets } = require("../utils/updateGoogleSheets"); 
+const User = require("../models/User");
+const { updateGoogleSheets } = require("../utils/updateGoogleSheets");
 
 const router = express.Router();
 
-// Define Python Path (Adjust based on your system)
-const pythonPath = "C:\\Users\\nandh\\OneDrive\\Desktop\\Online_Voting\\online-voting\\.venv\\Scripts\\python.exe";
+// 🚀 Set Python Path for Railway (Linux-based)
+const pythonPath = process.env.RAILWAY_ENV ? "python3" : "C:\\Users\\nandh\\OneDrive\\Desktop\\Online_Voting\\online-voting\\.venv\\Scripts\\python.exe";
 
 // Ensure `uploads` directory exists
 const uploadDir = path.join(__dirname, "../uploads");
@@ -47,20 +47,24 @@ router.post("/addvoter", async (req, res) => {
 
         const { voter_id } = req.body;
         if (!voter_id) {
-            return res.status(400).json({ error: "Voter ID is required", receivedBody: req.body });
+            return res.status(400).json({ error: "Voter ID is required" });
         }
 
         console.log(`✅ Running Python script for Voter ID: ${voter_id}`);
         
-        exec(`"${pythonPath}" backend/FaceRecognition/add_faces.py "${voter_id}"`, async (error, stdout, stderr) => {
+        const scriptPath = path.join(__dirname, "../FaceRecognition/add_faces.py");
+        const command = `"${pythonPath}" "${scriptPath}" "${voter_id}"`;
+
+        exec(command, async (error, stdout, stderr) => {
             if (error) {
                 console.error(`❌ Python Execution Error: ${error.message}`);
-                return res.status(500).json({ error: "Python script failed", details: error.message });
+                console.error(`📌 STDERR: ${stderr}`);
+                return res.status(500).json({ error: "Python script failed", details: stderr });
             }
 
             console.log("🐍 Python Output:", stdout);
 
-            // Save the voter in MongoDB
+            // Save voter to MongoDB
             const newVoter = new User({ voter_id });
             await newVoter.save();
 
@@ -93,7 +97,10 @@ router.post("/login", async (req, res) => {
 
         console.log(`🔍 Running Face Recognition for Voter ID: ${voter_id}`);
 
-        exec(`"${pythonPath}" backend/FaceRecognition/recognize_faces.py "${voter_id}"`, (error, stdout, stderr) => {
+        const scriptPath = path.join(__dirname, "../FaceRecognition/recognize_faces.py");
+        const command = `"${pythonPath}" "${scriptPath}" "${voter_id}"`;
+
+        exec(command, (error, stdout, stderr) => {
             console.log(`Python Output: ${stdout.trim()}`);
 
             if (stdout.includes(`MATCH: ${voter_id}`)) {

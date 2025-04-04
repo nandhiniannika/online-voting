@@ -10,7 +10,7 @@ const UserManagement = () => {
     const fetchVoters = async () => {
         try {
             setLoading(true);
-            const response = await fetch("http://localhost:5000/api/voters/");
+            const response = await fetch("http://online-voting-production-8600.up.railway.app/api/users");
             const data = await response.json();
             setVoters(data);
             setLoading(false);
@@ -34,7 +34,7 @@ const UserManagement = () => {
 
         try {
             setLoading(true);
-            const response = await fetch("http://localhost:5000/api/voters/addvoter", {
+            const response = await fetch("http://online-voting-production-8600.up.railway.app/api/users/addvoter", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ voter_id: voterID }),
@@ -62,7 +62,7 @@ const UserManagement = () => {
 
         try {
             setLoading(true);
-            const response = await fetch(`http://localhost:5000/api/voters/delete/${id}`, {
+            const response = await fetch(`http://online-voting-production-8600.up.railway.app/api/users/delete/${id}`, {
                 method: "DELETE",
             });
 
