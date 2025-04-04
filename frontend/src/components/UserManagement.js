@@ -1,144 +1,117 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import './UserManagement.css';
-
-const API_BASE_URL = "https://online-voting-production-8600.up.railway.app/api";
+import React, { useEffect, useState } from "react";
 
 const UserManagement = () => {
-  const [users, setUsers] = useState([]);
-  const [voterId, setVoterId] = useState('');
-  const [image, setImage] = useState(null);
-  const [message, setMessage] = useState('');
-  const navigate = useNavigate();
+    const [voters, setVoters] = useState([]);
+    const [voterID, setVoterID] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-  // For updating a user
-  const [editUserId, setEditUserId] = useState(null);
-  const [editVoterId, setEditVoterId] = useState('');
-  const [editImage, setEditImage] = useState(null);
+    // Fetch all voters
+    const fetchVoters = async () => {
+        try {
+            setLoading(true);
+            const response = await fetch("http://localhost:5000/api/voters/");
+            const data = await response.json();
+            setVoters(data);
+            setLoading(false);
+        } catch (error) {
+            console.error("❌ Error fetching voters:", error);
+            setError("Failed to load voters");
+            setLoading(false);
+        }
+    };
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+    useEffect(() => {
+        fetchVoters();
+    }, []);
 
-  const fetchUsers = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/users`);
-      setUsers(response.data);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      setMessage('Error fetching users.');
-    }
-  };
+    // Add Voter
+    const addVoter = async () => {
+        if (!voterID.trim()) {
+            alert("Voter ID cannot be empty!");
+            return;
+        }
 
-  const handleAddUser = async () => {
-    try {
-      const response = await axios.post(
-        `${API_BASE_URL}/users/addvoter`,
-        { voterId },
-        { headers: { "Content-Type": "application/json" } } // ✅ Ensure JSON format
-      );
-  
-      console.log("✅ User added:", response.data);
-    } catch (error) {
-      console.error("❌ Error adding user:", error.response?.data || error.message);
-    }
-  };
-  
+        try {
+            setLoading(true);
+            const response = await fetch("http://localhost:5000/api/voters/addvoter", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ voter_id: voterID }),
+            });
 
-  const handleDeleteUser = async (id) => {
-    try {
-      await axios.delete(`${API_BASE_URL}/users/delete/${id}`);
-      setMessage('User deleted successfully!');
-      fetchUsers();
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      setMessage('Error deleting user.');
-    }
-  };
+            const data = await response.json();
+            if (data.success) {
+                alert("✅ Voter added successfully!");
+                setVoterID("");
+                fetchVoters(); // Refresh the voter list
+            } else {
+                alert(`❌ Error: ${data.error}`);
+            }
+            setLoading(false);
+        } catch (error) {
+            console.error("❌ Error adding voter:", error);
+            alert("Failed to add voter!");
+            setLoading(false);
+        }
+    };
 
-  const handleEditClick = (user) => {
-    setEditUserId(user._id);
-    setEditVoterId(user.voter_id);
-    setEditImage(null);
-  };
+    // Delete Voter
+    const deleteVoter = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this voter?")) return;
 
-  const handleCancelEdit = () => {
-    setEditUserId(null);
-    setEditVoterId('');
-    setEditImage(null);
-  };
+        try {
+            setLoading(true);
+            const response = await fetch(`http://localhost:5000/api/voters/delete/${id}`, {
+                method: "DELETE",
+            });
 
-  const handleUpdateUser = async (e) => {
-    e.preventDefault();
-    if (!editUserId) return;
+            const data = await response.json();
+            if (data.success) {
+                alert("✅ Voter deleted successfully!");
+                fetchVoters();
+            } else {
+                alert(`❌ Error: ${data.message}`);
+            }
+            setLoading(false);
+        } catch (error) {
+            console.error("❌ Error deleting voter:", error);
+            alert("Failed to delete voter!");
+            setLoading(false);
+        }
+    };
 
-    const formData = new FormData();
-    formData.append('voter_id', editVoterId);
-    if (editImage) formData.append('image', editImage);
+    return (
+        <div>
+            <h2>Voter Management</h2>
 
-    try {
-      await axios.put(`${API_BASE_URL}/users/update/${editUserId}`, formData);
-      setMessage('User updated successfully!');
-      fetchUsers();
-      handleCancelEdit();
-    } catch (error) {
-      console.error('Error updating user:', error);
-      setMessage('Error updating user.');
-    }
-  };
+            {/* Add Voter Section */}
+            <div>
+                <input
+                    type="text"
+                    placeholder="Enter Voter ID"
+                    value={voterID}
+                    onChange={(e) => setVoterID(e.target.value)}
+                />
+                <button onClick={addVoter} disabled={loading}>
+                    {loading ? "Adding..." : "Add Voter"}
+                </button>
+            </div>
 
-  const handleVote = async (voterId) => {
-    try {
-      const response = await axios.post(`${API_BASE_URL}/recognize`, { voter_id: voterId });
-      if (response.data.success) {
-        navigate('/voting');
-      } else {
-        setMessage('Face recognition failed.');
-      }
-    } catch (error) {
-      console.error('Error recognizing face:', error);
-      setMessage('Error recognizing face.');
-    }
-  };
+            {/* Voter List */}
+            {loading && <p>Loading voters...</p>}
+            {error && <p style={{ color: "red" }}>{error}</p>}
 
-  return (
-    <div className="user-management">
-      <h2>User Management</h2>
-      {message && <div className="message">{message}</div>}
-
-      <form onSubmit={handleAddUser}>
-        <input type="text" placeholder="Enter Voter ID" value={voterId} onChange={(e) => setVoterId(e.target.value)} required />
-        <input type="file" accept="image/*" onChange={(e) => setImage(e.target.files[0])} />
-        <button type="submit">Add User</button>
-      </form>
-
-      <h3>User List</h3>
-      <div className="user-list">
-        {users.map((user) => (
-          <div key={user._id} className="user-card">
-            <img src={`${API_BASE_URL}/uploads/${user.image_filename || 'default.jpg'}`} alt="User" className="user-image" />
-            <h4>{user.voter_id}</h4>
-            <button onClick={() => handleDeleteUser(user._id)}>Delete</button>
-            <button onClick={() => handleEditClick(user)}>Update</button>
-            <button onClick={() => handleVote(user.voter_id)}>Vote</button>
-          </div>
-        ))}
-      </div>
-
-      {editUserId && (
-        <div className="update-form">
-          <h3>Update User</h3>
-          <form onSubmit={handleUpdateUser}>
-            <input type="text" value={editVoterId} onChange={(e) => setEditVoterId(e.target.value)} required />
-            <input type="file" accept="image/*" onChange={(e) => setEditImage(e.target.files[0])} />
-            <button type="submit">Save</button>
-            <button type="button" onClick={handleCancelEdit}>Cancel</button>
-          </form>
+            <ul>
+                {voters.map((voter) => (
+                    <li key={voter._id}>
+                        {voter.voter_id} 
+                        <button onClick={() => deleteVoter(voter._id)}>Delete</button>
+                    </li>
+                ))}
+            </ul>
         </div>
-      )}
-    </div>
-  );
+    );
 };
 
 export default UserManagement;
