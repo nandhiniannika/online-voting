@@ -1,1 +1,1 @@
-web: apt-get update && apt-get install -y python3 python3-pip && pip3 install -r backend/FaceRecognition/requirements.txt && node index.js & python3 backend/FaceRecognition/server.py
+web: node index.js & python3 backend/FaceRecognition/server.py
