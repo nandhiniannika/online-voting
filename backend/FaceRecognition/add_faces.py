@@ -2,14 +2,13 @@ import face_recognition
 import cv2
 import pickle
 import os
-import time
 import sys
 import requests
 import numpy as np
 import imutils
 
 # ✅ Define output directory for storing encodings
-OUTPUT_DIR = "C:/Users/nandh/OneDrive/Desktop/Online_Voting/online-voting/backend/FaceRecognition/data"
+OUTPUT_DIR = "/app/FaceRecognition/data"  # Update this to match your Docker path
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ✅ Check if Voter ID is provided
@@ -21,19 +20,23 @@ voter_id = sys.argv[1]  # Get Voter ID from Node.js
 print(f"🆔 Received Voter ID: {voter_id}")
 
 # ✅ Define Flask video stream URL
-FLASK_STREAM_URL = "http://127.0.0.1:5000/video_feed"  # Change this to your Railway URL if deployed
+FLASK_STREAM_URL = "http://host.docker.internal:5000/video_feed"  # Use host.docker.internal to access host from Docker
 
 # ✅ Connect to Flask stream
 print(f"🔄 Connecting to Flask video stream at {FLASK_STREAM_URL}...")
-stream = requests.get(FLASK_STREAM_URL, stream=True)
+try:
+    stream = requests.get(FLASK_STREAM_URL, stream=True, timeout=10)
+except Exception as e:
+    print(f"❌ ERROR: Could not connect to video stream!\n{e}")
+    sys.exit(1)
 
 if stream.status_code != 200:
-    print("❌ ERROR: Could not connect to video stream! Ensure Flask is running.")
+    print("❌ ERROR: Stream not responding with 200 OK. Make sure Flask is running.")
     sys.exit(1)
 
 # ✅ Processing frames
-buffer = b""  # Buffer to store incoming bytes
-captured_frame = None  # Variable to store a valid frame
+buffer = b""
+captured_frame = None
 
 for chunk in stream.iter_content(chunk_size=1024):
     buffer += chunk
@@ -41,29 +44,23 @@ for chunk in stream.iter_content(chunk_size=1024):
     b = buffer.find(b'\xff\xd9')  # End of JPEG
 
     if a != -1 and b != -1:
-        jpg = buffer[a:b+2]  # Extract JPEG
-        buffer = buffer[b+2:]  # Remove processed frame from buffer
+        jpg = buffer[a:b+2]
+        buffer = buffer[b+2:]
 
-        # ✅ Decode frame
         frame = cv2.imdecode(np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
-        frame = imutils.resize(frame, width=640)  # Resize for better processing
+        frame = imutils.resize(frame, width=640)
 
-        # ✅ Show captured image for verification (optional)
-        cv2.imshow("Captured Image", frame)
-        cv2.waitKey(2000)  # Display image for 2 seconds
-        cv2.destroyAllWindows()
-
-        captured_frame = frame  # Store captured frame
-        break  # Stop processing after getting one valid frame
+        captured_frame = frame
+        break  # Stop after first valid frame
 
 if captured_frame is None:
-    print("❌ ERROR: No valid frame captured from stream!")
+    print("❌ ERROR: No valid frame captured!")
     sys.exit(1)
 
-# ✅ Convert frame to RGB (Face Recognition works on RGB images)
+# ✅ Convert frame to RGB
 rgb_frame = cv2.cvtColor(captured_frame, cv2.COLOR_BGR2RGB)
 
-# ✅ Detect faces in the captured frame
+# ✅ Detect faces
 face_locations = face_recognition.face_locations(rgb_frame, model="hog")
 if len(face_locations) == 0:
     print("❌ No face detected! Try again.")
@@ -71,10 +68,10 @@ if len(face_locations) == 0:
 
 print(f"✅ Detected {len(face_locations)} face(s). Encoding...")
 
-# ✅ Get face encodings
+# ✅ Get encodings
 encodings = face_recognition.face_encodings(rgb_frame, face_locations)
 
-# ✅ Load existing encodings if they exist
+# ✅ Load existing encodings
 faces_data_path = os.path.join(OUTPUT_DIR, "faces_data.pkl")
 names_data_path = os.path.join(OUTPUT_DIR, "names.pkl")
 
@@ -87,7 +84,7 @@ else:
     known_encodings = []
     known_names = []
 
-# ✅ Store the new face encoding
+# ✅ Store new encoding
 if len(encodings) > 0:
     known_encodings.append(encodings[0])
     known_names.append(voter_id)
@@ -96,12 +93,11 @@ else:
     print("❌ Face encoding failed!")
     sys.exit(1)
 
-# ✅ Save updated encodings
+# ✅ Save encodings
 with open(faces_data_path, "wb") as f:
     pickle.dump(known_encodings, f)
-
 with open(names_data_path, "wb") as f:
     pickle.dump(known_names, f)
 
-print(f"🎉 Successfully stored {len(known_encodings)} face encodings for Voter ID: {voter_id}!")
-sys.exit(0)  # Exit successfully
+print(f"🎉 Successfully stored {len(known_encodings)} face encodings!")
+sys.exit(0)
