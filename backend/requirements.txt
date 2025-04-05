@@ -6,3 +6,4 @@ flask
 flask-cors
 pandas
 requests
+imutils
