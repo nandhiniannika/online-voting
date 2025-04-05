@@ -3,10 +3,8 @@ FROM python:3.10
 # Set working directory
 WORKDIR /app
 
-# Copy requirements.txt from parent directory
-COPY ../requirements.txt ./requirements.txt
-
-# Install system dependencies and Python packages
+# Copy requirements and install dependencies
+COPY requirements.txt .
 RUN apt-get update && apt-get install -y \
     cmake \
     build-essential \
@@ -14,14 +12,17 @@ RUN apt-get update && apt-get install -y \
     libboost-all-dev \
     libopenblas-dev \
     liblapack-dev \
-    && apt-get clean \
-    && pip install --no-cache-dir -r requirements.txt
+ && apt-get clean \
+ && pip install --no-cache-dir -r requirements.txt
 
-# Copy all FaceRecognition source code
+# Copy source code
 COPY . .
 
-# Expose Flask port
+# Optional: expose port if you're running Flask
 EXPOSE 5001
 
-# Run the Flask app
-CMD ["flask", "--app", "server", "run", "--host=0.0.0.0", "--port=5001"]
+# If you want to run server.py as a background Flask app:
+# CMD ["flask", "--app", "server", "run", "--host=0.0.0.0", "--port=5001"]
+
+# Or if this is just a utilities container to run scripts from Node:
+CMD ["sleep", "infinity"]
