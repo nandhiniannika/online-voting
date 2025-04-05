@@ -20,8 +20,11 @@ RUN apt-get update && apt-get install -y \
 # Copy the rest of the backend code
 COPY . .
 
-# Expose port (Flask usually runs on 5000)
+# Set environment variable for Railway
+ENV PORT=5000
+
+# Expose the port
 EXPOSE 5000
 
-# Run the server
+# Start the Flask server
 CMD ["python", "FaceRecognition/server.py"]

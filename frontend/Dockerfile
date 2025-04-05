@@ -1,22 +1,26 @@
-# Step 1: Use official Node image
+# Use Node.js base image
 FROM node:18-alpine
 
-# Step 2: Set working directory
+# Set working directory
 WORKDIR /app
 
-# Step 3: Copy package.json and install dependencies
+# Copy package.json and package-lock.json
 COPY package*.json ./
+
+# Install dependencies
 RUN npm install
 
-# Step 4: Copy the rest of the app
+# Copy rest of the project
 COPY . .
 
-# Step 5: Build the React app
+# Build the React app
 RUN npm run build
 
-# Step 6: Install `serve` to serve the build folder
+# Install serve to serve production build
 RUN npm install -g serve
 
-# Step 7: Expose port 3000 and run the app
+# Expose port
 EXPOSE 3000
-CMD ["serve", "-s", "build"]
+
+# Run the app
+CMD ["serve", "-s", "build", "-l", "3000"]
