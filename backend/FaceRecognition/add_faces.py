@@ -20,7 +20,8 @@ voter_id = sys.argv[1]  # Get Voter ID from Node.js
 print(f"🆔 Received Voter ID: {voter_id}")
 
 # ✅ Define Flask video stream URL
-FLASK_STREAM_URL = "http://host.docker.internal:5000/video_feed"  # Use host.docker.internal to access host from Docker
+FLASK_STREAM_URL = "http://192.168.229.213:5000/video_feed"
+  # Use host.docker.internal to access host from Docker
 
 # ✅ Connect to Flask stream
 print(f"🔄 Connecting to Flask video stream at {FLASK_STREAM_URL}...")
