@@ -16,50 +16,51 @@ const dockerContainer = "online-voting-backend-container";
 
 // ✅ POST: Add Voter
 router.post('/addvoter', async (req, res) => {
-    const { voter_id } = req.body;
-  
-    if (!voter_id) {
-      return res.status(400).json({ success: false, message: 'Voter ID missing' });
-    }
-  
     try {
-      // Start the Flask server
+      const { voter_id } = req.body;
+      console.log(`📥 Received Voter ID: ${voter_id}`);
+  
+      // ✅ Path to your Python scripts
       const serverPath = path.join(__dirname, '../FaceRecognition/server.py');
-      const serverProcess = spawn('python', [serverPath]);
-  
-      console.log("🚀 Flask server started");
-  
-      // Wait a few seconds for Flask to initialize
-      await new Promise(resolve => setTimeout(resolve, 3000));
-  
-      // Run add_faces.py with the Voter ID
       const addFacesPath = path.join(__dirname, '../FaceRecognition/add_faces.py');
-      const addProcess = spawn('python', [addFacesPath, voter_id]);
   
-      addProcess.stdout.on('data', data => {
-        console.log(`[add_faces.py]: ${data}`);
+      // ✅ Start the server
+      const serverProcess = spawn('python3', [serverPath]);
+  
+      serverProcess.stdout.on('data', (data) => {
+        console.log(`📡 server.py: ${data}`);
       });
   
-      addProcess.stderr.on('data', data => {
-        console.error(`[add_faces.py error]: ${data}`);
+      serverProcess.stderr.on('data', (data) => {
+        console.error(`❌ server.py error: ${data}`);
       });
   
-      addProcess.on('close', (code) => {
-        console.log(`✅ add_faces.py exited with code ${code}`);
+      serverProcess.on('exit', (code) => {
+        console.log(`📦 server.py exited with code ${code}`);
   
-        // Kill Flask server
-        serverProcess.kill();
-        console.log("🛑 Flask server stopped");
+        // ✅ Then run add_faces.py with the Voter ID
+        const addProcess = spawn('python3', [addFacesPath, voter_id]);
   
-        if (code === 0) {
-          return res.json({ success: true, message: 'Voter added and face encoded' });
-        } else {
-          return res.status(500).json({ success: false, message: 'Face encoding failed' });
-        }
+        addProcess.stdout.on('data', (data) => {
+          console.log(`✅ add_faces.py: ${data}`);
+        });
+  
+        addProcess.stderr.on('data', (data) => {
+          console.error(`❌ add_faces.py error: ${data}`);
+        });
+  
+        addProcess.on('exit', (code) => {
+          console.log(`🎯 add_faces.py exited with code ${code}`);
+          if (code === 0) {
+            return res.status(200).json({ success: true, message: "Voter added successfully!" });
+          } else {
+            return res.status(500).json({ success: false, message: "add_faces.py failed!" });
+          }
+        });
       });
-    } catch (err) {
-      console.error("❌ Error:", err.message);
-      return res.status(500).json({ success: false, message: 'Internal Server Error' });
+    } catch (error) {
+      console.error("🔥 Server error:", error.message);
+      return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
   });
 
