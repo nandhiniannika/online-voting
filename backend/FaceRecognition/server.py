@@ -35,7 +35,7 @@ def cleanup():
 
 if __name__ == "__main__":
     try:
-        app.run(host='0.0.0.0', port=5000, debug=False)  # Disable auto-reload
+        app.run(host='0.0.0.0', port=5001, debug=False)  # Disable auto-reload
     except KeyboardInterrupt:
         print("📷 Camera released.")
         camera.release()
