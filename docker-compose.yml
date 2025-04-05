@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    depends_on:
+      - flask-backend
+    networks:
+      - app-network
+    restart: always
+
+  flask-backend:
+    build: ./backend/FaceRecognition
+    ports:
+      - "5001:5001"
+    networks:
+      - app-network
+    restart: always
+
+networks:
+  app-network:
+
+
+
