@@ -23,7 +23,7 @@ router.post("/addvoter", async (req, res) => {
         console.log(`📥 Received request to add voter: ${voter_id}`);
 
         // 1. Check if Flask is up
-        const healthURL = "http://localhost:5001/health";
+        const healthURL = "http://flask-backend:5001/health";
         const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
         const healthResponse = await fetch(healthURL);
 
