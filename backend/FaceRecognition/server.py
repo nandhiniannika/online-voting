@@ -1,48 +1,47 @@
-from flask import Flask, Response
-import cv2
-import atexit
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import subprocess
+import os
 
 app = Flask(__name__)
+CORS(app)
 
-# Initialize webcam
-camera = cv2.VideoCapture(0)
+voter_list = []  # Replace with DB if needed
 
-# Route to stream video frames
-def generate_frames():
-    while True:
-        success, frame = camera.read()
-        if not success:
-            break
-        else:
-            _, buffer = cv2.imencode('.jpg', frame)
-            frame = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+@app.route('/api/users/addvoter', methods=['POST'])
+def add_voter():
+    data = request.get_json()
+    voter_id = data.get('voter_id')
 
-@app.route('/video_feed')
-def video_feed():
-    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    if not voter_id:
+        return jsonify({"success": False, "message": "Voter ID is required"}), 400
 
-# Home route
-@app.route('/')
-def home():
-    return "🎥 Video Stream Server is Running! Access <a href='/video_feed'>/video_feed</a> to view the feed."
+    # Check for duplicates
+    if voter_id in voter_list:
+        return jsonify({"success": False, "message": "Voter already exists"}), 409
 
-# ➕ Health check route for backend to verify server status
-@app.route('/health')
-def health():
-    return "OK", 200
+    voter_list.append(voter_id)
+    print(f"📥 Voter ID received: {voter_id}")
 
-# Properly release the camera when the app is shutting down
-@atexit.register
-def cleanup():
-    print("📷 Releasing camera...")
-    if camera.isOpened():
-        camera.release()
-
-if __name__ == "__main__":
+    # Call add_faces.py with voter_id as argument
     try:
-        app.run(host='0.0.0.0', port=5001, debug=False)
-    except KeyboardInterrupt:
-        print("📷 Camera released.")
-        camera.release()
+        result = subprocess.run(["python", "add_faces.py", voter_id], capture_output=True, text=True, check=True)
+        print("📸 Face captured:", result.stdout)
+    except subprocess.CalledProcessError as e:
+        print("❌ Face capture failed:", e.stderr)
+        return jsonify({"success": False, "message": "Face capture failed"}), 500
+
+    return jsonify({"success": True, "message": "Voter added and face captured"}), 200
+
+# Optional endpoint to shutdown server
+@app.route('/shutdown', methods=['POST'])
+def shutdown():
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func:
+        func()
+        return 'Server shutting down...'
+    else:
+        return 'Server shutdown failed', 500
+
+if __name__ == '__main__':
+    app.run(port=5001)

@@ -8,7 +8,7 @@ const UserManagement = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const API_BASE = "http://online-voting-production-8600.up.railway.app/api/users";
+  const API_BASE = "https://online-voting-production-8600.up.railway.app/api/users";
 
   const fetchVoters = async () => {
     try {
@@ -45,7 +45,7 @@ const UserManagement = () => {
       setLoading(true);
 
       if (selectedVoter) {
-        // Update voter logic (image optional)
+        // Update voter logic
         const formData = new FormData();
         formData.append("voter_id", voterID);
         if (imageFile) formData.append("image", imageFile);
@@ -93,7 +93,10 @@ const UserManagement = () => {
 
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE}/deletevoter/${id}`, { method: "DELETE" });
+      const response = await fetch(`${API_BASE}/deletevoter/${id}`, {
+        method: "DELETE",
+      });
+
       const data = await response.json();
       if (data.success) {
         alert("✅ Voter deleted successfully!");
@@ -121,7 +124,7 @@ const UserManagement = () => {
   };
 
   return (
-    <div>
+    <div style={{ padding: "1rem" }}>
       <h2>🗳️ Voter Management</h2>
 
       <form onSubmit={handleSubmit}>
@@ -160,7 +163,7 @@ const UserManagement = () => {
           <li key={voter._id}>
             {voter.voter_id}{" "}
             <button onClick={() => editVoter(voter)}>Edit</button>{" "}
-            <button onClick={() => deleteVoter(voter.voter_id)}>Delete</button>
+            <button onClick={() => deleteVoter(voter._id)}>Delete</button>
           </li>
         ))}
       </ul>

@@ -13,54 +13,53 @@ const pythonPath = process.env.RAILWAY_ENV ? "python3" : "C:\\Users\\nandh\\OneD
 const dockerContainer = "online-voting-backend-container";
 
 // ✅ POST: Add Voter
-router.post("/addvoter", async (req, res) => {
-    try {
-        const { voter_id } = req.body;
-        if (!voter_id) {
-            return res.status(400).json({ error: "Voter ID is required" });
-        }
-
-        console.log(`📥 Received request to add voter: ${voter_id}`);
-
-        // 1. Check if Flask is up
-        const healthURL = "http://localhost:5001/health";
-
-        const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
-        const healthResponse = await fetch(healthURL);
-
-        if (!healthResponse.ok) {
-            return res.status(500).json({ error: "Flask service is not running or unhealthy" });
-        }
-
-        console.log("✅ Flask backend is healthy");
-
-        // 2. Execute add_faces.py inside Docker container
-        const dockerCommand = `docker exec ${dockerContainer} python FaceRecognition/add_faces.py ${voter_id}`;
-        console.log(`🐳 Running inside Docker: ${dockerCommand}`);
-
-        exec(dockerCommand, async (error, stdout, stderr) => {
-            if (error) {
-                console.error(`❌ Docker error: ${error.message}`);
-                return res.status(500).json({ error: "Docker add_faces failed", details: stderr });
-            }
-
-            console.log(`✅ Docker Output:\n${stdout}`);
-
-            // Save to MongoDB
-            const newVoter = new User({ voter_id });
-            await newVoter.save();
-
-            // Update Google Sheets
-            await updateGoogleSheets(voter_id);
-
-            res.status(200).json({ success: true, message: "Voter added successfully!", output: stdout });
-        });
-
-    } catch (err) {
-        console.error("❌ Server error:", err.message);
-        res.status(500).json({ error: "Internal server error", details: err.message });
+router.post('/addvoter', async (req, res) => {
+    const { voter_id } = req.body;
+  
+    if (!voter_id) {
+      return res.status(400).json({ success: false, message: 'Voter ID missing' });
     }
-});
+  
+    try {
+      // Start the Flask server
+      const serverPath = path.join(__dirname, '../FaceRecognition/server.py');
+      const serverProcess = spawn('python', [serverPath]);
+  
+      console.log("🚀 Flask server started");
+  
+      // Wait a few seconds for Flask to initialize
+      await new Promise(resolve => setTimeout(resolve, 3000));
+  
+      // Run add_faces.py with the Voter ID
+      const addFacesPath = path.join(__dirname, '../FaceRecognition/add_faces.py');
+      const addProcess = spawn('python', [addFacesPath, voter_id]);
+  
+      addProcess.stdout.on('data', data => {
+        console.log(`[add_faces.py]: ${data}`);
+      });
+  
+      addProcess.stderr.on('data', data => {
+        console.error(`[add_faces.py error]: ${data}`);
+      });
+  
+      addProcess.on('close', (code) => {
+        console.log(`✅ add_faces.py exited with code ${code}`);
+  
+        // Kill Flask server
+        serverProcess.kill();
+        console.log("🛑 Flask server stopped");
+  
+        if (code === 0) {
+          return res.json({ success: true, message: 'Voter added and face encoded' });
+        } else {
+          return res.status(500).json({ success: false, message: 'Face encoding failed' });
+        }
+      });
+    } catch (err) {
+      console.error("❌ Error:", err.message);
+      return res.status(500).json({ success: false, message: 'Internal Server Error' });
+    }
+  });
 
 // ✅ DELETE: Delete Voter
 router.delete("/deletevoter/:voter_id", async (req, res) => {
