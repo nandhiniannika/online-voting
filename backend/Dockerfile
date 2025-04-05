@@ -1,20 +1,27 @@
-﻿# Use Node.js as base image
-FROM node:18-bullseye
+﻿FROM python:3.10
 
-# Set working directory inside container
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copy package files first for caching
-COPY package*.json ./
+# Copy backend requirements file
+COPY requirements.txt .
 
-# Install Node dependencies
-RUN npm install
+# Install system dependencies and Python packages
+RUN apt-get update && apt-get install -y \
+    cmake \
+    build-essential \
+    libgtk-3-dev \
+    libboost-all-dev \
+    libopenblas-dev \
+    liblapack-dev \
+    && apt-get clean \
+    && pip install --no-cache-dir --break-system-packages -r requirements.txt
 
-# Copy the rest of your backend code
+# Copy the rest of the backend code
 COPY . .
 
-# Expose the backend port
+# Expose port (Flask usually runs on 5000)
 EXPOSE 5000
 
-# Start the backend server
-CMD ["node", "index.js"]
+# Run the server
+CMD ["python", "FaceRecognition/server.py"]
